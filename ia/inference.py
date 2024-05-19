@@ -1,7 +1,10 @@
 from openai import OpenAI
+import os
+
+key = os.environ.get('OPEN_IA_KEY')
 
 client = OpenAI(
-  api_key=""
+  api_key= key
 )
 
 async def inference(prompt_root: str, prompt_user:str):

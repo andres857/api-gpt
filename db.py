@@ -1,8 +1,10 @@
 from pymongo import MongoClient
+import os
 
 def connect_to_database():
     # URI de conexión
-    uri = "mongodb+srv://aguerrero:mB3xSu5IBdf1bfi6@cluster0.0axlxff.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    
+    uri = os.environ.get('DB_URI')
 
     # Crear una instancia de MongoClient
     client = MongoClient(uri)
