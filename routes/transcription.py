@@ -33,17 +33,6 @@ async def upload_video(video: Optional[UploadFile] = None):
     # Aquí puedes agregar la lógica para procesar el video y generar la transcripción
     # ...
 
-    # llama al servicio de inferencia de openIA 
-    message_prompt_root = 'Eres un asistente experto en analizar contenido educativo. Tu tarea es identificar y resumir las principales ideas clave presentes en el siguiente texto de manera concisa y precisa, Lo mas IMPORTANTE No debes generar información engañosa, FALSA o IVENTANDA'
-
-    message = get_all_agents()
-    list_message = list(message)
-    inferencia = await inference(list_message[0]['prompt'], transcriptionVideo)
-    
     return { 
-        "transcriptionVideo": transcriptionVideo,
-        "prompt_system": message_prompt_root,
-        "inferencia": inferencia,
-        "video_id": video_id,
-        "file_path": destination
+        "text": transcriptionVideo,
     }

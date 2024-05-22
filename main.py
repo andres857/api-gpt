@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import agent, transcription
+from routes import agent, transcription, inference
 from db import connect_to_database
 
-app = FastAPI()
+app = FastAPI(debug=True)
 
 # Configurar CORS
 app.add_middleware(
@@ -17,6 +17,7 @@ app.add_middleware(
 db = connect_to_database()
 
 app.include_router(agent.router)
+app.include_router(inference.router)
 app.include_router(transcription.router)
 
 
