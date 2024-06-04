@@ -20,6 +20,12 @@ def get_all_agents() -> list:
     agents = json.loads(JSONEncoder().encode(agents_list))
     return agents
 
+def get_agent_by_id(agent_id: str) -> dict:
+    agent = db.agentes.find_one({"_id": ObjectId(agent_id)})
+    if agent:
+        agent = json.loads(JSONEncoder().encode(agent))
+    return agent
+
 def update_agent(agent_id, updated_data):
     # Validar y formatear los datos actualizados con el esquema JSON del modelo
     update_dict = updated_data.dict(exclude_unset=True)
@@ -29,7 +35,6 @@ def update_agent(agent_id, updated_data):
         {'_id': ObjectId(agent_id)},
         {'$set': update_dict}
     )
-
     return result
 
 def delete_agent(agent_id):
