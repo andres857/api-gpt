@@ -24,11 +24,6 @@ async def get_all():
     print(agents_list)
     return agents_list
 
-
-# @router.post("/", response_model=Agent)
-# def create_agent_route(agent_data: AgentCreate):
-#     # agent_id = create_agent(agent_data)
-#     return "Agent(id=agent_id, **agent_data.dict())"
 @router.post("/{agent_id}/inference", responses = {
     200: {"description": "Inference uploaded successfully"},
     400: {"description": "Invalid request body"},
@@ -74,4 +69,3 @@ async def update_agent_route(agent_id: str, agent_update: AgentUpdate):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
