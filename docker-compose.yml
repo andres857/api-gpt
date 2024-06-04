@@ -7,7 +7,7 @@ services:
     volumes:
       - .:/app
     ports:
-      - "8000:8000"
+      - "1905:8000"
     environment:
       - OPEN_IA_KEY=${OPEN_IA_KEY}
       - DB_URI=${DB_URI}
