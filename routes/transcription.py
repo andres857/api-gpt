@@ -2,8 +2,8 @@ from fastapi import APIRouter, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError, BaseModel, HttpUrl
 from typing import Optional
-from utils import save_video, save_video_from_url, delete_video
-from services.transcription_service import getTranscriptionVideo, create, list_videos
+from utils import save_video
+from services.transcription_service import  create, list_videos
 from schemas.video import Video
 import uuid
 

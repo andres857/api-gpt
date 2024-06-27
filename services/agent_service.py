@@ -1,10 +1,16 @@
-from db import connect_to_database
+from fastapi import Depends
+from db import get_database
 from models.agent import agent_model
 from utils import JSONEncoder
 from bson import ObjectId
 import json
 
-db = connect_to_database()
+async def get_db():
+    db = await anext(get_database())
+    try:
+        yield db
+    finally:
+        pass
     
 def create_agent(agent_data):
     # Validar y formatear los datos con el esquema JSON del modelo
@@ -20,8 +26,8 @@ def get_all_agents() -> list:
     agents = json.loads(JSONEncoder().encode(agents_list))
     return agents
 
-def get_agent_by_id(agent_id: str) -> dict:
-    agent = db.agentes.find_one({"_id": ObjectId(agent_id)})
+async def get_agent_by_id(agent_id: str, db = Depends(get_db)) -> dict:
+    agent = await db.agentes.find_one({"_id": ObjectId(agent_id)})
     if agent:
         agent = json.loads(JSONEncoder().encode(agent))
     return agent
