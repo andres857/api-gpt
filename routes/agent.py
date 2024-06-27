@@ -18,33 +18,24 @@ router = APIRouter(
     400: {"description": "Invalid request body"},
     500: {"description": "Internal server error"}
 })
-
 async def get_all():
-    agents_list = get_all_agents()
-    print(agents_list)
-    return agents_list
+    agents = get_all_agents()
+    return agents
 
 @router.post("/{agent_id}/inference", responses = {
     200: {"description": "Inference uploaded successfully"},
     400: {"description": "Invalid request body"},
     500: {"description": "Internal server error"}
 })
-
-async def generateInference(agent_id: str, body: InferenceBody):
+async def generateInferenceByAgent( agent_id: str, body: InferenceBody ):
     agent = get_agent_by_id(agent_id)
-    print('DATA');
-    print (body)
-    prompt_message = body.text;
-    nombre = agent['rol'];
+    print(agent)
+    prompt_message = body.text
     inferencia = await inference(agent['prompt'], prompt_message)
-    print("inferencia", inferencia)
-    print(type(body))
-    print(type(nombre))
-
     return {
+        "agent": agent,
         "inference": inferencia,
     }
-
 
 @router.put("/{agent_id}", responses={
     200: {"description": "Agent updated successfully"},
@@ -53,6 +44,7 @@ async def generateInference(agent_id: str, body: InferenceBody):
     500: {"description": "Internal server error"}
 })
 async def update_agent_route(agent_id: str, agent_update: AgentUpdate):
+    print(agent_update)
     try:
         # Validate ObjectId
         if not ObjectId.is_valid(agent_id):

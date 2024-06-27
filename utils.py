@@ -1,4 +1,4 @@
-import json, os
+import json, os, subprocess, uuid, requests
 from bson import ObjectId
 
 #Encode las respuesta de la base de datos cursor to json
@@ -29,3 +29,42 @@ async def save_video(video_file, video_id: str):
         contents = await video_file.read()
         buffer.write(contents)
     return destination
+
+async def save_video_from_url(url_video):
+    print('Download from URL....')
+    try:
+        response = requests.get(url_video, stream=True)
+        response.raise_for_status()
+
+        filename = url_video.split("/")[-1]
+
+        current_directory = os.path.abspath(os.path.dirname(__file__))
+        videos_directory = os.path.join(current_directory, "temp-files")
+        # Construir la ruta de destino del archivo
+        destination = os.path.join(videos_directory, filename)
+
+        with open(destination, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+        print(f"Sucess al descargar el video")
+        return destination;
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error al descargar el video: {e}")
+
+
+async def delete_video(filename: str):
+    try:
+        current_directory = os.path.abspath(os.path.dirname(__file__))
+        videos_directory = os.path.join(current_directory, "temp-files")
+        file_path = os.path.join(videos_directory, filename)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return {"message": f"Video {filename} eliminado exitosamente"}
+        else:
+            print(f"Error - Video no encontrado")
+
+    except Exception as e:
+                print(f"Error al eliminar el video: {str(e)}")
+

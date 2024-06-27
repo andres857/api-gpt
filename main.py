@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import agent, transcription, inference
-from db import connect_to_database
+from routes.mzg import clients
+from db import connect_to_database, get_db_connection_myzonego
 
 app = FastAPI(debug=True)
 
@@ -15,10 +16,15 @@ app.add_middleware(
 )
 
 db = connect_to_database()
+db_myzonego = get_db_connection_myzonego()
+
 
 app.include_router(agent.router)
 app.include_router(inference.router)
 app.include_router(transcription.router)
+# routes myzonego
+app.include_router(clients.router)
+
 
 
 
