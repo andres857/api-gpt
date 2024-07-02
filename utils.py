@@ -52,7 +52,6 @@ async def save_video_from_url(url_video):
     except requests.exceptions.RequestException as e:
         print(f"Error al descargar el video: {e}")
 
-
 async def delete_video(filename: str):
     try:
         current_directory = os.path.abspath(os.path.dirname(__file__))
