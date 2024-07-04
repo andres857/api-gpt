@@ -1,5 +1,12 @@
 import json, os, subprocess, uuid, requests
 from bson import ObjectId
+from fastapi import HTTPException
+
+class VideoDownloadError(Exception):
+    def __init__(self, message, status_code):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(self.message)
 
 #Encode las respuesta de la base de datos cursor to json
 class JSONEncoder(json.JSONEncoder):
@@ -31,7 +38,6 @@ async def save_video(video_file, video_id: str):
     return destination
 
 async def save_video_from_url(url_video):
-    print('Download from URL....')
     try:
         response = requests.get(url_video, stream=True)
         response.raise_for_status()
@@ -46,11 +52,18 @@ async def save_video_from_url(url_video):
         with open(destination, 'wb') as file:
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
-        print(f"Sucess al descargar el video")
-        return destination;
-
+        print(f"[ UTILS ] - Success al descargar el video")
+        return destination
+    
     except requests.exceptions.RequestException as e:
-        print(f"Error al descargar el video: {e}")
+            print(f"Error al descargar el video: {e}")
+            raise VideoDownloadError(f"Error al descargar el video: {str(e)}", 400)
+    except IOError as e:
+        print(f"Error de E/S al guardar el video: {e}")
+        raise VideoDownloadError(f"Error de E/S al guardar el video: {str(e)}", 500)
+    except Exception as e:
+        print(f"Error inesperado: {e}")
+        raise VideoDownloadError(f"Error inesperado: {str(e)}", 500)
 
 async def delete_video(filename: str):
     try:

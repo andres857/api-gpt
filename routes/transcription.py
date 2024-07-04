@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError, BaseModel, HttpUrl
 from typing import Optional
 from utils import save_video, save_video_from_url, delete_video
-from services.transcription_service import  create, list_videos, getTranscriptionVideo, list_videos_by_id_client, update_status_transcription_by_id_content
+from services.transcription_service import  create, list_videos, getTranscriptionVideoFromUrl, list_videos_by_id_client, update_status_transcription_by_id_content
 from schemas.video import Video
 import uuid
 
@@ -30,14 +30,8 @@ async def create_record(video: Video):
 })
 async def upload_video_from_url(video: Video):
     await update_status_transcription_by_id_content(video.id_mzg_content, video.transcription.task.state)
-    path = await save_video_from_url(video.video_url)
-    transcription = await getTranscriptionVideo(path, video.id_mzg_content)
     
-    # # Save transcription in colection Videos.
-    await delete_video(path)
-    # return { 
-    #     transcription
-    # }
+    transcription = await getTranscriptionVideoFromUrl(video.video_url, video.id_mzg_content)
     return Video(**transcription)
 
 # list registros de un client
