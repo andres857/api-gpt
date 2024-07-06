@@ -151,3 +151,78 @@ async def update_transcription_by_id_content(id, status, statusMessage, inferenc
         
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"An error occurred: {str(e)}")
+
+
+async def get_total_documents_by_client(id_mzg_customer):
+    pipeline = [
+        {
+            "$match": {
+                "id_mzg_customer": id_mzg_customer
+            }
+        },
+        {
+            "$count": "total"
+        }
+    ]
+    
+    try:
+        result = await db.transcriptions.aggregate(pipeline).to_list(length=None)
+        
+        if result:
+            return {
+                "status": "success",
+                "data": {
+                    "total_documents": result[0]["total"]
+                }
+            }
+        else:
+            return {
+                "status": "success",
+                "data": {
+                    "total_documents": 0
+                }
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error en la db: {str(e)}"
+        }
+    
+async def get_completed_tasks_count(id):
+    TASK_STATES = ["completed", "error", "pending", "in_progress"]
+    pipeline = [
+        {
+            "$match": {
+                "id_mzg_customer": id,
+                "transcription.task.state": {"$in": TASK_STATES }
+            }
+        },
+        {
+            "$group": {
+                "_id": "$transcription.task.state",
+                "count": {"$sum": 1}
+            }
+        }
+    ]
+    try:
+        result = await db.transcriptions.aggregate(pipeline).to_list(length=None)
+        total =  await get_total_documents_by_client(id)
+        # Inicializamos todos los estados con 0
+        counts = {state: 0 for state in TASK_STATES}
+        
+        # Actualizamos con los conteos reales
+        for item in result:
+            counts[item["_id"]] = item["count"]
+        
+        return {
+            "status": "success",
+            "data": {
+                "total": total["data"]["total_documents"],
+                "counts": counts,
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error en la db {str(e)}"
+        }
