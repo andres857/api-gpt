@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError, BaseModel, HttpUrl
 from typing import Optional
 from utils import save_video, save_video_from_url, delete_video
@@ -29,11 +30,20 @@ async def create_record(video: Video):
     500: {"description": "Internal server error"}
 })
 async def upload_video_from_url(video: Video):
-    await update_status_transcription_by_id_content(video.id_mzg_content, video.transcription.task.state)
-    
-    transcription = await getTranscriptionVideoFromUrl(video.video_url, video.id_mzg_content)
-    return Video(**transcription)
 
+    await update_status_transcription_by_id_content(video.id_mzg_content, video.transcription.task.state)
+
+    transcription = await getTranscriptionVideoFromUrl(video.video_url, video.id_mzg_content)
+    print (transcription)
+    if transcription["status"] == "success":
+        return JSONResponse(status_code=201, content=transcription)
+    elif transcription["status"] == "not_found":
+        return JSONResponse(status_code=404, content=transcription)
+    else:
+        return JSONResponse(
+            status_code=500, 
+            content={"detail": transcription.get("message", "An error occurred")}
+        )
 # list registros de un client
 @router.get("/client/{id}", responses={
     200: {"description": "Video uploaded successfully"},

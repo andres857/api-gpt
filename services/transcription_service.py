@@ -2,7 +2,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 import whisper, json
 from db import get_database
 from models.video import transcription_model
-from utils import JSONEncoder, save_video_from_url, delete_video
+from utils import save_video_from_url, delete_video
 from bson import ObjectId
 from whisper.utils import get_writer
 from ia.inference import inference 
@@ -25,9 +25,9 @@ async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
     try:
         model = whisper.load_model("base")
         path = await save_video_from_url(video_url)
-        print(f"[SERVICE TRANSCRIPTION path] - {path}")
+        print(f"[SERVICE TRANSCRIPTION WHISPER path] - {path}")
         result = model.transcribe(path)
-        print(f"[SERVICE TRANSCRIPTION whisper model] - {result}")
+        print(f"[SERVICE TRANSCRIPTION WHISPER model] - {result}")
 
         # Borrar el Video
         await delete_video(path)
@@ -45,7 +45,10 @@ async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
         # Update state and text in db
         updateDocument = await update_transcription_by_id_content(id_content, 'completed','Inferencia guardarda correctamente', inference_video)
         
-        return updateDocument
+        return {
+            "status": "success",
+            "data": updateDocument
+        }
     
     except Exception as e:
         # Manejar cualquier error que ocurra durante el proceso
@@ -54,13 +57,16 @@ async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
 
         # Actualizar el documento en la base de datos con estado "error"
         try:
-            await update_transcription_by_id_content(id_content, 'error', error_message)
-        except Exception as db_error:
-            print(f"Error al actualizar la base de datos: {str(db_error)}")
-
-        # Re-lanzar la excepción para que pueda ser manejada en un nivel superior si es necesario
-        raise HTTPException(status_code=500, detail=error_message)
-
+            updateDocument = await update_transcription_by_id_content(id_content, 'error', error_message)
+            return {
+                "status": "not_found",
+                "data": updateDocument
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Error en la transcripción y al actualizar la base de datos: {error_message}. {str(e)}"
+            }
 
 async def create(video):
     video_dict = video.dict(exclude={"id"}, by_alias=True)
@@ -124,18 +130,18 @@ async def update_transcription_by_id_content(id, status, statusMessage, inferenc
     }
     if inferencia is not None:
         update["$set"]["transcription.text"] = inferencia
+
     try:
-        print(f"[Service UPDATE document - {update}]")
         result = await db.transcriptions.update_one(filter, update)
 
         if result.modified_count > 0:
             # El documento fue actualizado exitosamente
-            updated_doc = await db.transcriptions.find_one(filter)
+            updated_doc = await db.transcriptions.find_one(filter, projection={"_id": 1, "transcription.task": 1})
             if updated_doc:
                 updated_doc["_id"] = str(updated_doc["_id"])
                 return updated_doc
             else:
-                raise HTTPException(status_code=404, detail="Updated document not found")
+                raise HTTPException(status_code=404, detail="Document not found")
         elif result.matched_count > 0:
             # El documento fue encontrado pero no modificado
             return {"message": "Document found but not modified"}
@@ -145,12 +151,3 @@ async def update_transcription_by_id_content(id, status, statusMessage, inferenc
         
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"An error occurred: {str(e)}")
-
-    # # Verificar si se actualizó algún documento
-    # if result.modified_count > 0:
-    #     # return {"message": f"Estado actualizado para id_mzg_content: {id}"}
-    #     print(result)
-    #     return "ok"
-    #     # return result
-    # else:
-    #     return {"message": f"No se encontró documento para id_mzg_content: {id}"}

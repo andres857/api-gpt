@@ -1,4 +1,4 @@
-import json, os, subprocess, uuid, requests
+import json, os, requests
 from bson import ObjectId
 from fastapi import HTTPException
 
@@ -7,8 +7,14 @@ class VideoDownloadError(Exception):
         self.message = message
         self.status_code = status_code
         super().__init__(self.message)
+    def to_dict(self):
+        return {
+            "error_type": self.__class__.__name__,
+            "message": self.message,
+            "status_code": self.status_code
+        }
 
-#Encode las respuesta de la base de datos cursor to json
+#Encode la respuesta de la base de datos MYSQL cursor to JSON
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, ObjectId):
@@ -52,12 +58,12 @@ async def save_video_from_url(url_video):
         with open(destination, 'wb') as file:
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
-        print(f"[ UTILS ] - Success al descargar el video")
+        print(f"[ UTILS ] - Video Descargado Exitosamente")
         return destination
     
     except requests.exceptions.RequestException as e:
-            print(f"Error al descargar el video: {e}")
-            raise VideoDownloadError(f"Error al descargar el video: {str(e)}", 400)
+        print(f"Error al descargar el video: {e}")
+        raise VideoDownloadError(f"Error al descargar el video: {str(e)}", 404)
     except IOError as e:
         print(f"Error de E/S al guardar el video: {e}")
         raise VideoDownloadError(f"Error de E/S al guardar el video: {str(e)}", 500)
@@ -73,10 +79,10 @@ async def delete_video(filename: str):
 
         if os.path.exists(file_path):
             os.remove(file_path)
-            return {"message": f"Video {filename} eliminado exitosamente"}
+            print(f"[ UTILS ] - Video eliminado exitosamente")
         else:
             print(f"Error - Video no encontrado")
 
     except Exception as e:
-                print(f"Error al eliminar el video: {str(e)}")
+        print(f"Error al eliminar el video: {str(e)}")
 
