@@ -19,7 +19,6 @@ async def getInferenceIA( text:str ):
     inferencia = await inference(agent['prompt'], text)
     print(f"[SERVICE INFERENCE result] - {inferencia}")
     return inferencia
-    
 
 async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
     try:
@@ -69,6 +68,7 @@ async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
             }
 
 async def create(video):
+    await db.transcriptions.create_index("id_mzg_content", unique=True)
     video_dict = video.dict(exclude={"id"}, by_alias=True)
     print(f"Service created Service: ${video_dict}")
     try:
@@ -86,13 +86,13 @@ async def create(video):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating or retrieving video: {str(e)}")
 
-async def list_videos():
-    videos = []
-    cursor = db.transcriptions.find()
-    async for video in cursor:
-        video["_id"] = str(video["_id"])
-        videos.append(video)
-    return videos
+# async def list_videos():
+#     videos = []
+#     cursor = db.transcriptions.find()
+#     async for video in cursor:
+#         video["_id"] = str(video["_id"])
+#         videos.append(video)
+#     return videos
 
 async def list_videos_by_id_client(id):
     videos = []
@@ -101,6 +101,20 @@ async def list_videos_by_id_client(id):
         video["_id"] = str(video["_id"])
         videos.append(video)
     return videos
+
+async def transcription_details(id):
+    print("id transcription",id)
+    result = await db.transcriptions.find_one({"_id": ObjectId(id)})
+    if result:
+        result["_id"] = str(result["_id"])
+        return {
+            "status": "success",
+            "data": {
+                "content": result
+            }
+        }
+    else:
+        raise HTTPException(status_code=404, detail="Created video not found")
 
 async def update_status_transcription_by_id_content(id, status):
     print('SERVICE - ACTUALIZANDO EL ESTADO DE LA TAREA')
@@ -116,7 +130,6 @@ async def update_status_transcription_by_id_content(id, status):
         return {"message": f"Estado actualizado para id_mzg_content: {id}"}
     else:
         return {"message": f"No se encontró documento para id_mzg_content: {id}"}
-
 
 async def update_transcription_by_id_content(id, status, statusMessage, inferencia=None):
     print(f"[ SERVICE UPDATE DOCUMENT - {status}, {statusMessage}, {inferencia}]")
@@ -151,7 +164,6 @@ async def update_transcription_by_id_content(id, status, statusMessage, inferenc
         
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"An error occurred: {str(e)}")
-
 
 async def get_total_documents_by_client(id_mzg_customer):
     pipeline = [

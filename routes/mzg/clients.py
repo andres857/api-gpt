@@ -41,7 +41,12 @@ async def getContentsFromClub( id_club: str ):
     400: {"description": "Invalid request body"},
     500: {"description": "Internal server error"}
 })
-async def get_urls_video_by_customer_service( customer_id: str ):
+async def get_urls_video_by_customer_service( 
+    customer_id: str, 
+    count_only: bool = Query(False, description="If true, returns only the count of videos")
+ ):
     url_content = get_urls_video_by_customer( customer_id )
-    print(url_content)
-    return url_content
+    if count_only:
+        return { "count": len(url_content)}
+    else:
+        return url_content

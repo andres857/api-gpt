@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError, BaseModel, HttpUrl
 from typing import Optional
 from utils import save_video, save_video_from_url, delete_video
-from services.transcription_service import  create, list_videos, getTranscriptionVideoFromUrl, list_videos_by_id_client, update_status_transcription_by_id_content,get_completed_tasks_count, get_total_documents_by_client
+from services.transcription_service import  create, getTranscriptionVideoFromUrl, list_videos_by_id_client, update_status_transcription_by_id_content,get_completed_tasks_count, transcription_details
 from schemas.video import Video
 import uuid
 
@@ -44,6 +44,7 @@ async def upload_video_from_url(video: Video):
             status_code=500, 
             content={"detail": transcription.get("message", "An error occurred")}
         )
+
 # list registros de un client
 @router.get("/client/{id}", responses={
     200: {"description": "Video uploaded successfully"},
@@ -53,6 +54,16 @@ async def upload_video_from_url(video: Video):
 async def get_transcriptions_status_for_client(id:int):
     lists_videos = await list_videos_by_id_client(id)
     return lists_videos
+
+# obtener informacion de una transcripcion
+@router.get("/{id}", responses={
+    200: {"description": "Video uploaded successfully"},
+    400: {"description": "Invalid request body"},
+    500: {"description": "Internal server error"}
+})
+async def get_transcription_info(id:str):
+    transcription = await transcription_details(id)
+    return transcription
 
 # transcription progress by client
 @router.get("/client/{id}/progress", responses={
