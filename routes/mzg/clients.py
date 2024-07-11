@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query 
 from fastapi.responses import JSONResponse
 
-from services.clients_mzg_service import get_all_customers, get_clubs_by_id_customer, get_contents_type_video_by_id_club, get_url_content_video, get_urls_video_by_customer
+from services.clients_mzg_service import get_all_customers, get_clubs_by_id_customer, get_contents_type_video_by_id_club, get_url_content_video, get_urls_video_by_customer, get_client_by_id
 
 router = APIRouter(
     prefix='/mzg',
@@ -16,6 +16,15 @@ router = APIRouter(
 async def get_all():
     customers = get_all_customers()
     return customers
+
+@router.get("/clients/{id}", responses = {
+    200: {"description": "Clients successfully"},
+    400: {"description": "Invalid request body"},
+    500: {"description": "Internal server error"}
+})
+async def get_client(id: int):
+    customer = get_client_by_id(id)
+    return customer
 
 @router.get("/clients/{id_customer}/clubs", responses = {
     200: {"description": "Club  successfully"},

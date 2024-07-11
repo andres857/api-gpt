@@ -1,16 +1,13 @@
-# Definir el esquema JSON para la colección de videos
-transcription_model = {
+inference_model = {
     "$jsonSchema": {
         "bsonType": "object",
-        "required": ["id_mzg_customer", "id_mzg_club", "id_mzg_content", "video_url", "transcription"],
+        "required": ["id_mzg_content", "id_agent", "result"],
         "properties": {
-            "id_mzg_customer": {"bsonType": "int"},
-            "id_mzg_club": {"bsonType": "int"},
             "id_mzg_content": {"bsonType": "int"},
-            "video_url": {"bsonType": "string"},
-            "transcription": {
+            "id_agent": {"bsonType": "objectId"},
+            "result": {
                 "bsonType": "object",
-                "required": ["task"],
+                "required": ["text", "task"],
                 "properties": {
                     "text": {"bsonType": ["string", "null"]},
                     "task": {
@@ -21,10 +18,19 @@ transcription_model = {
                                 "bsonType": "string",
                                 "enum": ["pending", "in_progress", "completed", "error"]
                             },
-                            "message": {"bsonType": "string"},
-                            "metadata": {"bsonType": ["object","null"]}
+                            "message": {"bsonType": "string"}
                         }
                     }
+                }
+            },
+            "metadata": {
+                "bsonType": "object",
+                "properties": {
+                    "caracteres": {"bsonType": "int"},
+                    "palabras": {"bsonType": "int"},
+                    "tokens": {"bsonType": "int"},
+                    "idioma": {"bsonType": "string"},
+                    "porcentaje_reduccion": {"bsonType": "double"}
                 }
             },
             "created_at": {"bsonType": "date"},
@@ -32,4 +38,3 @@ transcription_model = {
         }
     }
 }
-

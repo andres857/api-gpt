@@ -21,6 +21,24 @@ def get_all_customers():
         customers = json.loads(JSONEncoder().encode(customers_list))
         return customers
 
+def get_client_by_id(id):
+    engine = get_db_connection_myzonego()
+    
+    with engine.connect() as connection:
+        # Utilizar la conexión para realizar consultas y operaciones en la base de datos
+        query = text("SELECT * FROM customers WHERE id = :id")
+        result = connection.execute(query, {"id": id})
+        customer_result = []
+        for row in result:
+            item = {
+                "id": row[0],
+                "name": row[1],
+                "url_portal": row[2]
+            }
+            customer_result.append(item)
+        customer = json.loads(JSONEncoder().encode(customer_result))
+        return customer
+
 def get_clubs_by_id_customer(id):
     engine = get_db_connection_myzonego()
     

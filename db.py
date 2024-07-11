@@ -27,7 +27,7 @@ def get_database():
 
 async def create_unique_index():
     db = get_database()
-    await db.transcriptions.create_index("id_mzg_content", unique=True)
+    await db.video_transcriptions.create_index("id_mzg_content", unique=True)
 
 def get_db_connection_myzonego():
     database_url = f'mysql+mysqlconnector://{os.environ.get("DB_USERNAME")}:{os.environ.get("DB_PASSWORD")}@{"192.168.0.102"}:{3307}/{os.environ.get("DB_DATABASE")}'

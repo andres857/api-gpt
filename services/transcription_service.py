@@ -1,7 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 import whisper, json
 from db import get_database
-from models.video import transcription_model
+from models.video_transcription import video_transcription_model
 from utils import save_video_from_url, delete_video
 from bson import ObjectId
 from whisper.utils import get_writer
@@ -68,12 +68,12 @@ async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
             }
 
 async def create(video):
-    await db.transcriptions.create_index("id_mzg_content", unique=True)
+    await db.video_transcriptions.create_index("id_mzg_content", unique=True)
     video_dict = video.dict(exclude={"id"}, by_alias=True)
     print(f"Service created Service: ${video_dict}")
     try:
-        result = await db.transcriptions.insert_one(video_dict)
-        created_video = await db.transcriptions.find_one({"_id": result.inserted_id})
+        result = await db.video_transcriptions.insert_one(video_dict)
+        created_video = await db.video_transcriptions.find_one({"_id": result.inserted_id})
 
         if created_video:
             created_video["_id"] = str(created_video["_id"])
@@ -86,17 +86,9 @@ async def create(video):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating or retrieving video: {str(e)}")
 
-# async def list_videos():
-#     videos = []
-#     cursor = db.transcriptions.find()
-#     async for video in cursor:
-#         video["_id"] = str(video["_id"])
-#         videos.append(video)
-#     return videos
-
 async def list_videos_by_id_client(id):
     videos = []
-    cursor = db.transcriptions.find({"id_mzg_customer":id})
+    cursor = db.video_transcriptions.find({"id_mzg_customer":id})
     async for video in cursor:
         video["_id"] = str(video["_id"])
         videos.append(video)
@@ -104,7 +96,7 @@ async def list_videos_by_id_client(id):
 
 async def transcription_details(id):
     print("id transcription",id)
-    result = await db.transcriptions.find_one({"_id": ObjectId(id)})
+    result = await db.video_transcriptions.find_one({"_id": ObjectId(id)})
     if result:
         result["_id"] = str(result["_id"])
         return {
@@ -124,7 +116,7 @@ async def update_status_transcription_by_id_content(id, status):
             "transcription.task.state": status
         }
     }
-    result = await db.transcriptions.update_one(filter, update)
+    result = await db.video_transcriptions.update_one(filter, update)
     # Verificar si se actualizó algún documento
     if result.modified_count > 0:
         return {"message": f"Estado actualizado para id_mzg_content: {id}"}
@@ -145,11 +137,11 @@ async def update_transcription_by_id_content(id, status, statusMessage, inferenc
         update["$set"]["transcription.text"] = inferencia
 
     try:
-        result = await db.transcriptions.update_one(filter, update)
+        result = await db.video_transcriptions.update_one(filter, update)
 
         if result.modified_count > 0:
             # El documento fue actualizado exitosamente
-            updated_doc = await db.transcriptions.find_one(filter, projection={"_id": 1, "transcription.task": 1})
+            updated_doc = await db.video_transcriptions.find_one(filter, projection={"_id": 1, "transcription.task": 1})
             if updated_doc:
                 updated_doc["_id"] = str(updated_doc["_id"])
                 return updated_doc
@@ -178,7 +170,7 @@ async def get_total_documents_by_client(id_mzg_customer):
     ]
     
     try:
-        result = await db.transcriptions.aggregate(pipeline).to_list(length=None)
+        result = await db.video_transcriptions.aggregate(pipeline).to_list(length=None)
         
         if result:
             return {
@@ -217,7 +209,7 @@ async def get_completed_tasks_count(id):
         }
     ]
     try:
-        result = await db.transcriptions.aggregate(pipeline).to_list(length=None)
+        result = await db.video_transcriptions.aggregate(pipeline).to_list(length=None)
         total =  await get_total_documents_by_client(id)
         # Inicializamos todos los estados con 0
         counts = {state: 0 for state in TASK_STATES}

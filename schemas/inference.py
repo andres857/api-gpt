@@ -26,28 +26,33 @@ class PyObjectId(ObjectId):
             return ObjectId(value)
         raise ValueError("Invalid ObjectId")
 
-class TranscriptionState(str, Enum):
+class InferenceState(str, Enum):
     pending = "pending"
     in_progress = "in_progress"
     completed = "completed"
     error = "error"
 
-class TranscriptionTask(BaseModel):
-    state: TranscriptionState = TranscriptionState.pending
+class InferenceTask(BaseModel):
+    state: InferenceState = InferenceState.pending
     message: str = ""
-    metadata: Optional[Dict] = None
 
-class Transcription(BaseModel):
+class InferenceResult(BaseModel):
     text: Optional[str] = None
-    task: TranscriptionTask
+    task: InferenceTask
 
-class Video(BaseModel):
+class InferenceMetadata(BaseModel):
+    caracteres: Optional[int] = None
+    palabras: Optional[int] = None
+    tokens: Optional[int] = None
+    idioma: Optional[str] = None
+    porcentaje_reduccion: Optional[float] = None
+
+class Inference(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    id_mzg_customer: int
-    id_mzg_club: int
     id_mzg_content: int
-    video_url: str
-    transcription: Transcription
+    id_agent: PyObjectId
+    result: InferenceResult
+    metadata: Optional[InferenceMetadata] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

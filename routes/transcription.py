@@ -5,7 +5,7 @@ from pydantic import ValidationError, BaseModel, HttpUrl
 from typing import Optional
 from utils import save_video, save_video_from_url, delete_video
 from services.transcription_service import  create, getTranscriptionVideoFromUrl, list_videos_by_id_client, update_status_transcription_by_id_content,get_completed_tasks_count, transcription_details
-from schemas.video import Video
+from schemas.video_transcription import VideoTranscription
 import uuid
 
 router = APIRouter(
@@ -19,9 +19,9 @@ router = APIRouter(
     400: {"description": "Invalid request body"},
     500: {"description": "Internal server error"}
 })
-async def create_record(video: Video):
+async def create_record(video: VideoTranscription):
     created_video = await create(video)
-    return Video(**created_video)
+    return VideoTranscription(**created_video)
 
 # crea la transcription del video con una URL
 @router.put("/video/url", responses={
@@ -29,7 +29,7 @@ async def create_record(video: Video):
     400: {"description": "Invalid request body"},
     500: {"description": "Internal server error"}
 })
-async def upload_video_from_url(video: Video):
+async def upload_video_from_url(video: VideoTranscription):
 
     await update_status_transcription_by_id_content(video.id_mzg_content, video.transcription.task.state)
 
