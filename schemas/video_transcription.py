@@ -40,7 +40,9 @@ class TranscriptionTask(BaseModel):
 class TranscriptionMetadata(BaseModel):
     characters: Optional[int] = None
     words: Optional[int] = None
-    tokens: Optional[int] = None
+    total_tokens: Optional[int] = None
+    completion_tokens: Optional[int] = None
+    prompt_tokens: Optional[int] = None
 
 class Transcription(BaseModel):
     text: Optional[str] = None

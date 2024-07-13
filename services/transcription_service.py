@@ -30,7 +30,7 @@ async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
 
         # Borrar el Video
         await delete_video(path)
-        
+
         # Convertir el resultado a un diccionario
         transcription_dict = {
             "text": result["text"],
@@ -92,7 +92,9 @@ async def list_videos_by_id_client(id):
     async for video in cursor:
         video["_id"] = str(video["_id"])
         videos.append(video)
+    print(videos)
     return videos
+
 
 async def transcription_details(id):
     print("id transcription",id)
@@ -134,7 +136,15 @@ async def update_transcription_by_id_content(id, status, statusMessage, inferenc
         }
     }
     if inferencia is not None:
-        update["$set"]["transcription.text"] = inferencia
+        characters = len(inferencia["inference_text"])
+        words = len(inferencia["inference_text"].split())
+
+        update["$set"]["transcription.text"] = inferencia["inference_text"]
+        update["$set"]["transcription.metadata.characters"] = characters
+        update["$set"]["transcription.metadata.words"] = words
+        update["$set"]["transcription.metadata.total_tokens"] = inferencia["total_tokens"]
+        update["$set"]["transcription.metadata.completion_tokens"] = inferencia["completion_tokens"]
+        update["$set"]["transcription.metadata.prompt_tokens"] = inferencia["prompt_tokens"]
 
     try:
         result = await db.video_transcriptions.update_one(filter, update)
@@ -230,3 +240,50 @@ async def get_completed_tasks_count(id):
             "status": "error",
             "message": f"Error en la db {str(e)}"
         }
+
+async def get_stats_video_transcription(id):
+    TASK_STATES = ["completed"]
+    print("idclient",id)
+    pipeline = [
+        {
+            "$match": {
+                "id_mzg_customer": id,
+                # "transcription.task.state": {"$in": TASK_STATES }
+                "transcription.task.state": "completed",
+                "transcription.metadata.total_tokens": {"$exists": True, "$ne": None}
+            }
+        },
+        {
+            "$group": {
+                "_id": None,
+                "total_tokens": {"$sum": "$transcription.metadata.total_tokens"},
+                "count": {"$sum": 1}
+            }
+        }
+    ]
+    try:
+        result = await db.video_transcriptions.aggregate(pipeline).to_list(length=1)
+        print(result)
+        if result:
+            return {
+                "status": "success",
+                "data": {
+                    "total_tokens": result[0]["total_tokens"],
+                    "count": result[0]["count"]
+                }
+            }
+        else:
+            return {
+                "status": "success",
+                "data": {
+                    "total_tokens": 0,
+                    "count": 0
+                }
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error en la db {str(e)}"
+        }
+
+

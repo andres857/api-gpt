@@ -22,7 +22,6 @@ video_transcription_model = {
                                 "enum": ["pending", "in_progress", "completed", "error"]
                             },
                             "message": {"bsonType": "string"},
-                            
                         }
                     },
                     "metadata": {
@@ -30,7 +29,10 @@ video_transcription_model = {
                         "properties": {
                             "characters": {"bsonType": "int"},
                             "words": {"bsonType": "int"},
-                            "tokens": {"bsonType": "int"},
+                            "total_tokens": {"bsonType": "int"},
+                            "completion_tokens": {"bsonType": "int"},
+                            "prompt_tokens": {"bsonType": "int"},
+
                         }
                     }
                 }
