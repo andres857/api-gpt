@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import agent, transcription, inference
+from routes import agent, transcription, inference, chat
 from routes.mzg import clients
 from db import get_db_connection_myzonego, initialize_db, create_unique_index
 
@@ -26,5 +26,7 @@ app.add_middleware(
 app.include_router(agent.router)
 app.include_router(inference.router)
 app.include_router(transcription.router)
+app.include_router(chat.router)
+
 # routes myzonego
 app.include_router(clients.router)
