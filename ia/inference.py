@@ -32,9 +32,12 @@ async def inference_chat(prompt_root: str, prompt_user:str):
       ]
     )
     message = completion.choices[0].message.content.strip('"')
-    return {
-        "inference_text": message,
-        "prompt_tokens" : completion.usage.prompt_tokens,
-        "completion_tokens" : completion.usage.completion_tokens,
-        "total_tokens" : completion.usage.total_tokens,
+    # return {
+    #     "message": message,
+    #     "prompt_tokens" : completion.usage.prompt_tokens,
+    #     "completion_tokens" : completion.usage.completion_tokens,
+    #     "total_tokens" : completion.usage.total_tokens,
+    # }
+    return{
+        message
     }
