@@ -86,3 +86,21 @@ async def delete_video(filename: str):
     except Exception as e:
         print(f"Error al eliminar el video: {str(e)}")
 
+import subprocess
+import json
+
+def get_duration_ffprobe(path):
+    cmd = [
+        'ffprobe',
+        '-v', 'quiet',
+        '-print_format', 'json',
+        '-show_format',
+        '-show_streams',
+        path
+    ]
+    
+    resultado = subprocess.run(cmd, capture_output=True, text=True)
+    datos = json.loads(resultado.stdout)
+    
+    duracion = float(datos['format']['duration'])
+    return duracion

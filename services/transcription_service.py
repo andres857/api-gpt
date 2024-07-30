@@ -1,10 +1,10 @@
-from motor.motor_asyncio import AsyncIOMotorDatabase
 import whisper, json
+# from motor.motor_asyncio import AsyncIOMotorDatabase
 from db import get_database
-from models.video_transcription import video_transcription_model
-from utils import save_video_from_url, delete_video
+# from models.video_transcription import video_transcription_model
+from utils import save_video_from_url, delete_video, get_duration_ffprobe
 from bson import ObjectId
-from whisper.utils import get_writer
+# from whisper.utils import get_writer
 from ia.inference import inference 
 from services.agent_service import get_agent_by_id
 from fastapi import HTTPException
@@ -27,6 +27,8 @@ async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
         print(f"[SERVICE TRANSCRIPTION WHISPER path] - {path}")
         result = model.transcribe(path)
         print(f"[SERVICE TRANSCRIPTION WHISPER model] - {result}")
+        duracion = get_duration_ffprobe(path)
+        print(f"La duración del video es: {duracion} segundos")
 
         # Borrar el Video
         await delete_video(path)
@@ -42,7 +44,7 @@ async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
         inference_video = await getInferenceIA(transcription)
         
         # Update state and text in db
-        updateDocument = await update_transcription_by_id_content(id_content, 'completed','Inferencia guardarda correctamente', inference_video)
+        updateDocument = await update_transcription_by_id_content(id_content, 'completed','Inferencia guardarda correctamente', inference_video, duracion)
         
         return {
             "status": "success",
@@ -95,7 +97,6 @@ async def list_videos_by_id_client(id):
     print(videos)
     return videos
 
-
 async def transcription_details(id):
     print("id transcription",id)
     result = await db.video_transcriptions.find_one({"_id": ObjectId(id)})
@@ -125,8 +126,8 @@ async def update_status_transcription_by_id_content(id, status):
     else:
         return {"message": f"No se encontró documento para id_mzg_content: {id}"}
 
-async def update_transcription_by_id_content(id, status, statusMessage, inferencia=None):
-    print(f"[ SERVICE UPDATE DOCUMENT - {status}, {statusMessage}, {inferencia}]")
+async def update_transcription_by_id_content(id, status, statusMessage, inferencia=None, duration_video=None):
+    print(f"[ SERVICE UPDATE DOCUMENT 1 - {status}, {statusMessage}, {inferencia}, {duration_video}]")
 
     filter = {"id_mzg_content": id}
     update = {
@@ -139,6 +140,7 @@ async def update_transcription_by_id_content(id, status, statusMessage, inferenc
         characters = len(inferencia["inference_text"])
         words = len(inferencia["inference_text"].split())
 
+        update["$set"]["duration"] = duration_video
         update["$set"]["transcription.text"] = inferencia["inference_text"]
         update["$set"]["transcription.metadata.characters"] = characters
         update["$set"]["transcription.metadata.words"] = words
@@ -285,5 +287,3 @@ async def get_stats_video_transcription(id):
             "status": "error",
             "message": f"Error en la db {str(e)}"
         }
-
-

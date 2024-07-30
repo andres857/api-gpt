@@ -1,66 +1,51 @@
 from pydantic import BaseModel, Field
-from pydantic_core import core_schema
-from typing import Optional, Dict, Any
-from enum import Enum
+from typing import List, Optional
 from datetime import datetime
 from bson import ObjectId
+from enum import Enum
 
 class PyObjectId(ObjectId):
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, _source_type: Any, _handler: Any
-    ) -> core_schema.CoreSchema:
-        return core_schema.union_schema([
-            core_schema.is_instance_schema(ObjectId),
-            core_schema.chain_schema([
-                core_schema.str_schema(),
-                core_schema.no_info_plain_validator_function(cls.validate),
-            ]),
-        ])
+    def __get_validators__(cls):
+        yield cls.validate
 
     @classmethod
-    def validate(cls, value):
-        if isinstance(value, ObjectId):
-            return value
-        if ObjectId.is_valid(value):
-            return ObjectId(value)
-        raise ValueError("Invalid ObjectId")
+    def validate(cls, v):
+        if not ObjectId.is_valid(v):
+            raise ValueError("Invalid objectid")
+        return ObjectId(v)
 
-class InferenceState(str, Enum):
-    pending = "pending"
-    in_progress = "in_progress"
-    completed = "completed"
-    error = "error"
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        field_schema.update(type="string")
 
-class InferenceTask(BaseModel):
-    state: InferenceState = InferenceState.pending
-    message: str = ""
+class TaskState(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    ERROR = "error"
 
-class InferenceResult(BaseModel):
-    text: Optional[str] = None
-    task: InferenceTask
+class Task(BaseModel):
+    state: TaskState
+    message: str
 
-class InferenceMetadata(BaseModel):
-    caracteres: Optional[int] = None
-    palabras: Optional[int] = None
-    tokens: Optional[int] = None
-    idioma: Optional[str] = None
-    porcentaje_reduccion: Optional[float] = None
+class Metadata(BaseModel):
+    tokens: int
+    completion_time: Optional[datetime] = None
+
+class Agent(BaseModel):
+    idAgent: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    text: str
+    task: Task
+    metadata: Metadata
 
 class Inference(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    id_mzg_content: int
-    id_agent: PyObjectId
-    result: InferenceResult
-    metadata: Optional[InferenceMetadata] = None
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    agents: List[Agent]
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    model_config = {
-        "populate_by_name": True,
-        "arbitrary_types_allowed": True,
-        "json_encoders": {
-            ObjectId: str,
-            datetime: lambda v: v.isoformat()
-        }
-    }
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}

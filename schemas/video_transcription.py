@@ -45,6 +45,7 @@ class TranscriptionMetadata(BaseModel):
     prompt_tokens: Optional[int] = None
 
 class Transcription(BaseModel):
+    inference_id: Optional[PyObjectId] = Field(alias="_id", default=None)
     text: Optional[str] = None
     task: TranscriptionTask
     metadata: Optional[TranscriptionMetadata] = None
@@ -55,6 +56,7 @@ class VideoTranscription(BaseModel):
     id_mzg_club: int
     id_mzg_content: int
     video_url: str
+    duration: Optional[int] = None
     transcription: Transcription
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

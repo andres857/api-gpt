@@ -8,10 +8,12 @@ video_transcription_model = {
             "id_mzg_club": {"bsonType": "int"},
             "id_mzg_content": {"bsonType": "int"},
             "video_url": {"bsonType": "string"},
+            "duration": {"bsonType": "int"},
             "transcription": {
                 "bsonType": "object",
                 "required": ["task"],
                 "properties": {
+                    "inference_id": {"bsonType": "objectId"},
                     "text": {"bsonType": ["string", "null"]},
                     "task": {
                         "bsonType": "object",

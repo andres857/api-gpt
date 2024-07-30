@@ -14,8 +14,8 @@ router = APIRouter(
 )
 
 # crea el document en la collection para el video
-@router.post("/video/record", responses={
-    200: {"description": "Video uploaded successfully"},
+@router.post("/video/create-record", responses={
+    200: {"description": "record created successfully"},
     400: {"description": "Invalid request body"},
     500: {"description": "Internal server error"}
 })

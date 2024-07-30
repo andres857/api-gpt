@@ -10,6 +10,7 @@ services:
       - "1905:8000"
     environment:
       - OPEN_IA_KEY=${OPEN_IA_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - DB_URI=${DB_URI}
       - ENVIRONMENT=dev
       - DB_HOST= ${DB_HOST}
