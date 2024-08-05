@@ -101,7 +101,7 @@ async def create_inferences_for_videotranscription(id_video_transcription: str):
     
     # Crear un objeto Inferences con todas las inferencias
     inferences_document = Inferences(
-        id_video_transcription=PyObjectId(id_video_transcription),
+        id_video_transcription= PyObjectId(id_video_transcription),
         inferences=inferences_list,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc)
