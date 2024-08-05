@@ -2,7 +2,7 @@ import whisper, json
 # from motor.motor_asyncio import AsyncIOMotorDatabase
 from db import get_database
 # from models.video_transcription import video_transcription_model
-from utils import save_video_from_url, delete_video, get_duration_ffprobe
+from utils import save_video_from_url, save_video, delete_video, get_duration_ffprobe
 from bson import ObjectId
 # from whisper.utils import get_writer
 from ia.inference import inference 
@@ -109,7 +109,7 @@ async def transcription_details(id):
             }
         }
     else:
-        raise HTTPException(status_code=404, detail="Created video not found")
+        raise HTTPException(status_code=404, detail=" Video transcription Not Found")
 
 async def update_status_transcription_by_id_content(id, status):
     print('SERVICE - ACTUALIZANDO EL ESTADO DE LA TAREA')
@@ -287,3 +287,33 @@ async def get_stats_video_transcription(id):
             "status": "error",
             "message": f"Error en la db {str(e)}"
         }
+    
+async def getTranscriptionVideoFromVideoFile(video):
+    try:
+        model = whisper.load_model("base")
+        path = await save_video(video)
+        print(f"[SERVICE TRANSCRIPTION WHISPER path] - {path}")
+        result = model.transcribe(path)
+        print(f"[SERVICE TRANSCRIPTION WHISPER model] - {result}")
+
+        # Borrar el Video
+        await delete_video(path)
+
+        # Convertir el resultado a un diccionario
+        transcription_dict = {
+            "text": result["text"],
+            "language": result["language"],
+        }
+
+        # Convertir el diccionario a JSON
+        transcription = json.dumps(transcription_dict["text"], ensure_ascii=False)        
+        inference_video = await getInferenceIA(transcription)
+
+        return {
+            "inferencia":inference_video
+        }
+    
+    except Exception as e:
+        # Manejar cualquier error que ocurra durante el proceso
+        error_message = f"Error en la transcripción: {str(e)}"
+        print(error_message)  # Para logging

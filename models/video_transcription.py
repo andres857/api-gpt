@@ -13,7 +13,6 @@ video_transcription_model = {
                 "bsonType": "object",
                 "required": ["task"],
                 "properties": {
-                    "inference_id": {"bsonType": "objectId"},
                     "text": {"bsonType": ["string", "null"]},
                     "task": {
                         "bsonType": "object",

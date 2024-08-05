@@ -1,16 +1,23 @@
 inferences_schema = {
     "$jsonSchema": {
         "bsonType": "object",
-        "required": ["agents"],
+        "required": ["inferences"],
         "properties": {
-            "agents": {
+            "inferences": {
                 "bsonType": "array",
                 "items": {
                     "bsonType": "object",
-                    "required": ["idAgent", "text", "task", "metadata"],
+                    "required": [ "text" ],
                     "properties": {
-                        "idAgent": {"bsonType": "objectId"},
-                        "text": {"bsonType": "string"},
+                        "id_video_transcription": {"bsonType": "objectId"},
+                        "text": {
+                            "bsonType": "object",
+                            "properties": {
+                                "es": {"bsonType": "string"},
+                                "en": {"bsonType": "string"}
+                            },
+                            "additionalProperties": False
+                        },
                         "task": {
                             "bsonType": "object",
                             "required": ["state", "message"],

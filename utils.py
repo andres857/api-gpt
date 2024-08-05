@@ -1,6 +1,7 @@
 import json, os, requests
 from bson import ObjectId
 from fastapi import HTTPException
+import uuid
 
 class VideoDownloadError(Exception):
     def __init__(self, message, status_code):
@@ -22,7 +23,7 @@ class JSONEncoder(json.JSONEncoder):
         return super().default(o)
     
 # Función para guardar el video en el sistema de archivos
-async def save_video(video_file, video_id: str):
+async def save_video(video_file):
     # Obtener la extensión del archivo
     extension = video_file.filename.split('.')[-1]
 
@@ -32,7 +33,7 @@ async def save_video(video_file, video_id: str):
     videos_directory = os.path.join(current_directory, "temp-files")
 
     # Construir la ruta de destino del archivo
-    destination = os.path.join(videos_directory, f"{video_id}.{extension}")
+    destination = os.path.join(videos_directory, f"{uuid.uuid4()}.{extension}")
     print ("current_directory",current_directory)
     # print ("root_directory",root_directory)
     print("destination", destination)

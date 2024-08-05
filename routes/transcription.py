@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError, BaseModel, HttpUrl
 from typing import Optional
 from utils import save_video, save_video_from_url, delete_video
-from services.transcription_service import  create, getTranscriptionVideoFromUrl, list_videos_by_id_client, update_status_transcription_by_id_content,get_completed_tasks_count, transcription_details, get_stats_video_transcription
+from services.transcription_service import  create, getTranscriptionVideoFromUrl, list_videos_by_id_client, update_status_transcription_by_id_content,get_completed_tasks_count, transcription_details, get_stats_video_transcription, getTranscriptionVideoFromVideoFile
 from schemas.video_transcription import VideoTranscription
 import uuid
 
@@ -94,16 +94,9 @@ async def upload_video_file(video: Optional[UploadFile] = None):
     print('route video')
     if not video:
         return {"message": "No video file provided"}
-
-    # Generar un ID único para el video
-    video_id = str(uuid.uuid4())
-
-    # Guardar el video en el sistema de archivos
-    destination = await save_video(video, video_id)
-
-    transcription = await getTranscriptionVideo(destination)
     
-    return { 
-        "text": transcription,
-        "idVideo": video_id
+    transcription = await getTranscriptionVideoFromVideoFile(video)
+
+    return {
+        "transcription": transcription,
     }

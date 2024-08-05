@@ -45,7 +45,6 @@ class TranscriptionMetadata(BaseModel):
     prompt_tokens: Optional[int] = None
 
 class Transcription(BaseModel):
-    inference_id: Optional[PyObjectId] = Field(alias="_id", default=None)
     text: Optional[str] = None
     task: TranscriptionTask
     metadata: Optional[TranscriptionMetadata] = None
