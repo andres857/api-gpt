@@ -17,13 +17,13 @@ class PyObjectId(ObjectId):
                 core_schema.no_info_plain_validator_function(cls.validate),
             ]),
         ])
-
+    
     @classmethod
     def validate(cls, value):
         if isinstance(value, ObjectId):
-            return value
+            return str(value)
         if ObjectId.is_valid(value):
-            return ObjectId(value)
+            return str(ObjectId(value))
         raise ValueError("Invalid ObjectId")
 
 class TaskState(str, Enum):
@@ -37,12 +37,18 @@ class Task(BaseModel):
     message: str = ""
 
 class Metadata(BaseModel):
-    tokens: int
+    # tokens: int
+    role: str
+    model: str
+    finish_reason: str
+    total_tokens: int
+    completion_tokens: int
+    prompt_tokens: int 
     completion_time: Optional[datetime] = None
 
 class Inference(BaseModel):
-    # id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
-    # id_video_transcription: PyObjectId
+    id_agent: PyObjectId
+    rol: str
     text: Dict[str, str]  # Cambiado para permitir múltiples idiomas
     task: Optional[Task] = None
     metadata: Optional[Metadata] = None
@@ -57,4 +63,20 @@ class Inferences(BaseModel):
     class Config:
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+        json_encoders = {ObjectId: str, PyObjectId: str}
+        # json_encoders = {ObjectId: str,}
+    
+    def model_dump(self, **kwargs):
+        exclude_none = kwargs.pop("exclude_none", True)
+        return super().model_dump(exclude_none=exclude_none, **kwargs)
+
+    @classmethod
+    def model_validate(cls, value):
+        if isinstance(value, dict):
+            for field in ["_id", "id_video_transcription"]:
+                if field in value:
+                    value[field] = str(value[field])
+            for inference in value.get("inferences", []):
+                if "id_agent" in inference:
+                    inference["id_agent"] = str(inference["id_agent"])
+        return super().model_validate(value)

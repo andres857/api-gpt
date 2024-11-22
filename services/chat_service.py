@@ -7,6 +7,7 @@ from bson import ObjectId
 from whisper.utils import get_writer
 from ia.inference import inference_chat, inference_claude_chat
 from services.agent_service import get_agent_by_id
+from services.inferences_service import get_inference_chat_by_id_video_transcription
 from fastapi import HTTPException
 from pymongo.errors import DuplicateKeyError
 from schemas.chat import ChatRequest
@@ -27,6 +28,18 @@ async def get_transcriptions_by_id_club( id: int):
     # print(videos_transcriptions)
     return videos_transcriptions
 
+async def get_resumen_transcription_IA_by_id_club( id: int):
+    separador = "\n\n===== SIGUIENTE TRANSCRIPCION DE VIDEO =====\n\n"
+    text_transcriptions = ""
+    cursor = db.video_transcriptions.find({"id_mzg_club":id})
+    async for video_transcription in cursor:
+        video_transcription["_id"] = str(video_transcription["_id"])
+        if (video_transcription["transcription"]["text"] != None):
+            messages = await get_inference_chat_by_id_video_transcription(video_transcription["_id"])
+            text_transcriptions += messages + separador
+    # print(videos_transcriptions)
+    return text_transcriptions
+
 # convertir el contexto del chat en un string schema for GPT
 async def get_context_chat_messages(chat: ChatRequest):
     result = ""
@@ -36,7 +49,6 @@ async def get_context_chat_messages(chat: ChatRequest):
     # print (result)
     return result.strip()
 
-
 # convertir el contexto del chat en un string schema for GPT
 async def get_context_chat_messages_for_claude(chat):
     result = chat.dict()
@@ -44,21 +56,22 @@ async def get_context_chat_messages_for_claude(chat):
     return messages
 
 #Usar la funcion de inferencia 
-async def chat_agent(idClub, chat):
-    transcriptions = await get_transcriptions_by_id_club(idClub)
+async def chat_agent_gpt(idClub, chat):
+    # transcriptions = await get_transcriptions_by_id_club(idClub) # Toda la transcription
+    transcriptions = await get_resumen_transcription_IA_by_id_club(idClub) # Resumen del contenido con IA
     context_chat = await get_context_chat_messages(chat)
-    agent = await get_agent_by_id('6697e1e946faf435426a412f')
+    agent = await get_agent_by_id('6697e1e946faf435426a412f')#Obtiene el agente del chat
     separador_inicio_transcriptions = "\n\n===== INICIO DE LAS TRANSCRIPCIONES DE VIDEO =====\n\n"
     
     promt_system = agent['prompt'] + separador_inicio_transcriptions + transcriptions
-    # print(promt_system)
 
     inferencia = await inference_chat(promt_system, context_chat)
     return (inferencia)
 
 #Usar la funcion de inferencia 
 async def chat_agent_claude_model(idClub, chat):
-    transcriptions = await get_transcriptions_by_id_club(idClub)
+    # transcriptions = await get_transcriptions_by_id_club(idClub) # Toda la transcription
+    transcriptions = await get_resumen_transcription_IA_by_id_club(idClub) # Resumen del contenido con IA
     context_chat = await get_context_chat_messages_for_claude(chat)
     agent = await get_agent_by_id('6697e1e946faf435426a412f')
     separador_inicio_transcriptions = "\n\n===== INICIO DE LAS TRANSCRIPCIONES DE VIDEO =====\n\n"

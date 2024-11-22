@@ -4,14 +4,23 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError, BaseModel, HttpUrl
 from typing import Optional
 from utils import save_video, save_video_from_url, delete_video
-from services.transcription_service import  create, getTranscriptionVideoFromUrl, list_videos_by_id_client, update_status_transcription_by_id_content,get_completed_tasks_count, transcription_details, get_stats_video_transcription, getTranscriptionVideoFromVideoFile
+from services.transcription_service import  create, getTranscriptionVideoFromUrl, list_videos_by_id_client, update_status_transcription_by_id_content,get_completed_tasks_count, transcription_details, getTranscriptionVideoFromVideoFile
 from schemas.video_transcription import VideoTranscription
-import uuid
 
 router = APIRouter(
     prefix='/transcriptions',
     tags=['transcription']
 )
+
+# obtener informacion de una transcripcion
+@router.get("/{id}", responses={
+    200: {"description": "Video uploaded successfully"},
+    400: {"description": "Invalid request body"},
+    500: {"description": "Internal server error"}
+})
+async def get_transcription_info(id:str):
+    transcription = await transcription_details(id)
+    return transcription
 
 # crea el document en la collection para el video
 @router.post("/video/create-record", responses={
@@ -44,16 +53,6 @@ async def upload_video_from_url(video: VideoTranscription):
             content={"detail": transcription.get("message", "An error occurred")}
         )
 
-# obtener informacion de una transcripcion
-@router.get("/{id}", responses={
-    200: {"description": "Video uploaded successfully"},
-    400: {"description": "Invalid request body"},
-    500: {"description": "Internal server error"}
-})
-async def get_transcription_info(id:str):
-    transcription = await transcription_details(id)
-    return transcription
-
 # list las transcripciones de un client
 @router.get("/client/{id}", responses={
     200: {"description": "Video uploaded successfully"},
@@ -63,16 +62,6 @@ async def get_transcription_info(id:str):
 async def list_videos(id:int):
     lists_videos = await list_videos_by_id_client(id)
     return lists_videos
-
-# obtener informacion de una transcripcion
-@router.get("/client/{id}/tokens", responses={
-    200: {"description": "Video uploaded successfully"},
-    400: {"description": "Invalid request body"},
-    500: {"description": "Internal server error"}
-})
-async def get_stats(id:int):
-    stats = await get_stats_video_transcription(id)
-    return stats
 
 # transcription progress by client
 @router.get("/client/{id}/progress", responses={

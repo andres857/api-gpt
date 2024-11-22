@@ -1,10 +1,7 @@
 import whisper, json
-# from motor.motor_asyncio import AsyncIOMotorDatabase
 from db import get_database
-# from models.video_transcription import video_transcription_model
 from utils import save_video_from_url, save_video, delete_video, get_duration_ffprobe
 from bson import ObjectId
-# from whisper.utils import get_writer
 from ia.inference import inference 
 from services.agent_service import get_agent_by_id
 from fastapi import HTTPException
@@ -30,8 +27,7 @@ async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
         duracion = get_duration_ffprobe(path)
         print(f"La duración del video es: {duracion} segundos")
 
-        # Borrar el Video
-        await delete_video(path)
+        await delete_video(path) # Borrar el Video
 
         # Convertir el resultado a un diccionario
         transcription_dict = {
@@ -39,12 +35,9 @@ async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
             "language": result["language"],
         }
 
-        # Convertir el diccionario a JSON
-        transcription = json.dumps(transcription_dict["text"], ensure_ascii=False)        
-        inference_video = await getInferenceIA(transcription)
+        # transcription = json.dumps(transcription_dict["text"], ensure_ascii=False)        
         
-        # Update state and text in db
-        updateDocument = await update_transcription_by_id_content(id_content, 'completed','Inferencia guardarda correctamente', inference_video, duracion)
+        updateDocument = await update_transcription_by_id_content(id_content, 'completed','Transcription video guardarda correctamente', str(transcription_dict["text"]), duracion)
         
         return {
             "status": "success",
@@ -94,11 +87,9 @@ async def list_videos_by_id_client(id):
     async for video in cursor:
         video["_id"] = str(video["_id"])
         videos.append(video)
-    print(videos)
     return videos
 
 async def transcription_details(id):
-    print("id transcription",id)
     result = await db.video_transcriptions.find_one({"_id": ObjectId(id)})
     if result:
         result["_id"] = str(result["_id"])
@@ -128,6 +119,7 @@ async def update_status_transcription_by_id_content(id, status):
 
 async def update_transcription_by_id_content(id, status, statusMessage, inferencia=None, duration_video=None):
     print(f"[ SERVICE UPDATE DOCUMENT 1 - {status}, {statusMessage}, {inferencia}, {duration_video}]")
+    print(f"[ SERVICE UPDATE DOCUMENT 2 XXXXXX - {inferencia}]")
 
     filter = {"id_mzg_content": id}
     update = {
@@ -137,16 +129,21 @@ async def update_transcription_by_id_content(id, status, statusMessage, inferenc
         }
     }
     if inferencia is not None:
-        characters = len(inferencia["inference_text"])
-        words = len(inferencia["inference_text"].split())
-
+        print('aquitoy')
+        # characters = len(inferencia["inference_text"])
+        # words = len(inferencia["inference_text"].split())
+        characters = len(inferencia)
+        words = len(inferencia.split())
+        print("c",characters)
+        print("words",words)
         update["$set"]["duration"] = duration_video
-        update["$set"]["transcription.text"] = inferencia["inference_text"]
+        # update["$set"]["transcription.text"] = inferencia["inference_text"]
+        update["$set"]["transcription.text"] = inferencia
         update["$set"]["transcription.metadata.characters"] = characters
         update["$set"]["transcription.metadata.words"] = words
-        update["$set"]["transcription.metadata.total_tokens"] = inferencia["total_tokens"]
-        update["$set"]["transcription.metadata.completion_tokens"] = inferencia["completion_tokens"]
-        update["$set"]["transcription.metadata.prompt_tokens"] = inferencia["prompt_tokens"]
+        # update["$set"]["transcription.metadata.total_tokens"] = inferencia["total_tokens"]
+        # update["$set"]["transcription.metadata.completion_tokens"] = inferencia["completion_tokens"]
+        # update["$set"]["transcription.metadata.prompt_tokens"] = inferencia["prompt_tokens"]
 
     try:
         result = await db.video_transcriptions.update_one(filter, update)
@@ -237,51 +234,6 @@ async def get_completed_tasks_count(id):
                 "counts": counts,
             }
         }
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Error en la db {str(e)}"
-        }
-
-async def get_stats_video_transcription(id):
-    TASK_STATES = ["completed"]
-    print("idclient",id)
-    pipeline = [
-        {
-            "$match": {
-                "id_mzg_customer": id,
-                # "transcription.task.state": {"$in": TASK_STATES }
-                "transcription.task.state": "completed",
-                "transcription.metadata.total_tokens": {"$exists": True, "$ne": None}
-            }
-        },
-        {
-            "$group": {
-                "_id": None,
-                "total_tokens": {"$sum": "$transcription.metadata.total_tokens"},
-                "count": {"$sum": 1}
-            }
-        }
-    ]
-    try:
-        result = await db.video_transcriptions.aggregate(pipeline).to_list(length=1)
-        print(result)
-        if result:
-            return {
-                "status": "success",
-                "data": {
-                    "total_tokens": result[0]["total_tokens"],
-                    "count": result[0]["count"]
-                }
-            }
-        else:
-            return {
-                "status": "success",
-                "data": {
-                    "total_tokens": 0,
-                    "count": 0
-                }
-            }
     except Exception as e:
         return {
             "status": "error",

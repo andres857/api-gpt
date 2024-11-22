@@ -30,10 +30,9 @@ video_transcription_model = {
                         "properties": {
                             "characters": {"bsonType": "int"},
                             "words": {"bsonType": "int"},
-                            "total_tokens": {"bsonType": "int"},
-                            "completion_tokens": {"bsonType": "int"},
-                            "prompt_tokens": {"bsonType": "int"},
-
+                            # "total_tokens": {"bsonType": "int"},
+                            # "completion_tokens": {"bsonType": "int"},
+                            # "prompt_tokens": {"bsonType": "int"},
                         }
                     }
                 }

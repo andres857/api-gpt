@@ -22,6 +22,9 @@ async def inference(prompt_root: str, prompt_user:str):
     )
     message = completion.choices[0].message.content.strip('"')
     return {
+        "role": completion.choices[0].message.role,
+        "model": completion.model,
+        "finish_reason": completion.choices[0].finish_reason,
         "inference_text": message,
         "prompt_tokens" : completion.usage.prompt_tokens,
         "completion_tokens" : completion.usage.completion_tokens,
@@ -37,14 +40,11 @@ async def inference_chat(prompt_root: str, prompt_user:str):
       ]
     )
     message = completion.choices[0].message.content.strip('"')
-    # return {
-    #     "message": message,
-    #     "prompt_tokens" : completion.usage.prompt_tokens,
-    #     "completion_tokens" : completion.usage.completion_tokens,
-    #     "total_tokens" : completion.usage.total_tokens,
-    # }
-    return{
-        message
+    return {
+        "message": message,
+        "prompt_tokens" : completion.usage.prompt_tokens,
+        "completion_tokens" : completion.usage.completion_tokens, # tokens generados para la respuesta
+        "total_tokens" : completion.usage.total_tokens,
     }
 
 def format_chat_history(messages):
@@ -59,7 +59,7 @@ def format_chat_history(messages):
 
 async def inference_claude_chat(system_prompt: str, chat_history: dict):
     message = claude_client.messages.create(
-        max_tokens=1024,
+        max_tokens=4096,
         system= system_prompt,
         messages= chat_history,
         model="claude-3-sonnet-20240229",
@@ -68,7 +68,9 @@ async def inference_claude_chat(system_prompt: str, chat_history: dict):
     print("============",message)
     assistant_message = message.content[0].text
     return {
-        "inference_text": assistant_message,
+        "model": message.model,
+        "role": message.role,
+        "message": assistant_message,
         "prompt_tokens": message.usage.input_tokens,
         "completion_tokens": message.usage.output_tokens
     }

@@ -35,14 +35,14 @@ class TranscriptionState(str, Enum):
 class TranscriptionTask(BaseModel):
     state: TranscriptionState = TranscriptionState.pending
     message: str = ""
-    metadata: Optional[Dict] = None
+    # metadata: Optional[Dict] = None
 
 class TranscriptionMetadata(BaseModel):
     characters: Optional[int] = None
     words: Optional[int] = None
-    total_tokens: Optional[int] = None
-    completion_tokens: Optional[int] = None
-    prompt_tokens: Optional[int] = None
+    # total_tokens: Optional[int] = None
+    # completion_tokens: Optional[int] = None
+    # prompt_tokens: Optional[int] = None
 
 class Transcription(BaseModel):
     text: Optional[str] = None

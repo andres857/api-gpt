@@ -49,15 +49,17 @@ async def update_transcriptions_with_inference(db: AsyncIOMotorDatabase):
     print("Proceso completado")
 
 async def create(inference):
-    inference_dict = inference.dict(exclude={"id"}, by_alias=True)
+
+    await db.inferences.create_index("id_video_transcription", unique=True)
+    inference_dict = inference.dict(by_alias=True)
+
     print(f"Service INFERENCE Create: ${inference_dict}")
     try:
         result = await db.inferences.insert_one(inference_dict)
         inferences_created = await db.inferences.find_one({"_id": result.inserted_id})
-
+        print("service CREATED INFERENCES",inferences_created)
         if inferences_created:
-            inferences_created["_id"] = str(inferences_created["_id"])
-            return inferences_created
+            return Inferences.model_validate(inferences_created)
         else:
             raise HTTPException(status_code=404, detail="Error creando la inferencia")
     
@@ -66,24 +68,27 @@ async def create(inference):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating or retrieving Inference: {str(e)}")
     
-# Para cada Document/registro de video_transcription, crear un registro 
-# en la coleccion de inferencias y actualizar el id recien en 
-# el document de video_transcription
+# Crea las inferencias iniciales para un video_transcription
 async def create_inferences_for_videotranscription(id_video_transcription: str):
-    # Para los agentes requeridos crear las inferencias requeridas
     transcription = await transcription_details(id_video_transcription)
     content_transcription = transcription["data"]["content"]["transcription"]["text"]
     
     agents = await get_all_agents()
     agent_translate_to_en = await get_agent_by_id('66b03a0304d4364a6e55d37a')
-    # Delete agents que no son necesarios
-    agents = [agent for agent in agents if agent['rol'] != 'Chat' and agent['rol'] != 'Resumen video IA' and agent['rol'] != 'Traductor EN']
+    
+    agents = [agent for agent in agents if agent['rol'] != 'Chat' and agent['rol'] and agent['rol'] != 'Traductor EN'] # Delete agents que no son necesarios
+
     inferences_list = []
     for agent in agents:
         inferencia = await inference(agent['prompt'], content_transcription)
         inferencia_en = await inference(agent_translate_to_en['prompt'], inferencia["inference_text"])
+        
+        rol_agent= agent['rol']
+        agent_id_used = str(agent["_id"])
 
         inference_item = Inference(
+            id_agent= PyObjectId(agent_id_used),
+            rol= rol_agent,
             text={
                 "es": inferencia.get('inference_text', ''),
                 "en": inferencia_en.get('inference_text', '')
@@ -93,7 +98,12 @@ async def create_inferences_for_videotranscription(id_video_transcription: str):
                 message="Inference created successfully"
             ),
             metadata=Metadata(
-                tokens=inferencia.get('total_tokens', 0),
+                role= inferencia.get('role', 0),
+                model= inferencia.get('model',0),
+                finish_reason = inferencia.get('finish_reason',0),
+                total_tokens=inferencia.get('total_tokens', 0),
+                completion_tokens=inferencia.get('completion_tokens', 0),
+                prompt_tokens=inferencia.get('prompt_tokens', 0),
                 completion_time=datetime.now(timezone.utc)
             )
         )
@@ -109,8 +119,63 @@ async def create_inferences_for_videotranscription(id_video_transcription: str):
     
     # Llamar a la función create con el documento completo
     result = await create(inferences_document)
-    # return result
-        
+
+    return {
+        "status": "success",
+        "data": result 
+    }
+
+# retorna todas la inferencias de un video_transcription
+async def get_inferences_by_id_video_transcription(id):
+    doc = await db.inferences.find_one({"id_video_transcription": ObjectId(id)})
+    print("list FUNCTION", doc)
+    if doc:
+        return Inferences.model_validate(doc)
+    return None
+
+# retorna la inferencia Acortada para el chat
+async def get_inference_chat_by_id_video_transcription(id):
+    doc = await db.inferences.find_one({"id_video_transcription": ObjectId(id)})
+    if doc:
+        chat_inference = next((inference for inference in doc.get('inferences', []) if inference.get('rol') == 'Resumen video IA'), None)
+        message_es = chat_inference["text"]["es"]
+        return message_es
+    return None
 
 async def add_inference(id_video_transcription, id_inference):
     pass
+
+# retorna los tokens usados para una transcripcion de video 
+async def used_tokens(id_video_transcription):
+    doc = await db.inferences.find_one({"id_video_transcription": ObjectId(id_video_transcription)})
+    if doc:
+        total_tokens = 0
+        inferences = doc["inferences"]
+        for inference in inferences:
+            tokens = inference['metadata']["total_tokens"]
+            total_tokens += tokens 
+        return total_tokens
+    return None
+
+# retorna los tokens usados para una transcripcion de video 
+async def used_tokens_by_client(id_client):
+    video_transcriptions_cursor = db.video_transcriptions.find({"id_mzg_customer": int(id_client)})
+    total_tokens = 0
+    total_tokens_sent = 0
+    total_tokens_generated = 0
+    async for video_transcriptor in video_transcriptions_cursor:
+        doc = await db.inferences.find_one({"id_video_transcription": video_transcriptor["_id"]})
+        if doc:
+            inferences = doc["inferences"]
+            for inference in inferences:
+                tokens = inference['metadata']["total_tokens"]
+                tokens_sent = inference['metadata']["prompt_tokens"]
+                tokens_generated = inference['metadata']["completion_tokens"]
+                total_tokens += tokens
+                total_tokens_sent += tokens_sent
+                total_tokens_generated += tokens_generated
+    cost_prompt_tokens = round(total_tokens_sent / 1000 * 0.0005, 2)
+    cost_completion_tokens = round(total_tokens_generated / 1000 * 0.0015, 2)
+    cost_total_tokens = round (cost_prompt_tokens + cost_completion_tokens, 2)
+
+    return total_tokens, total_tokens_sent, total_tokens_generated, cost_prompt_tokens, cost_completion_tokens, cost_total_tokens

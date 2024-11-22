@@ -3,13 +3,16 @@ inferences_schema = {
         "bsonType": "object",
         "required": ["inferences"],
         "properties": {
+            "_id": {"bsonType": "objectId"},
+            "id_video_transcription": {"bsonType": "objectId"},
             "inferences": {
                 "bsonType": "array",
                 "items": {
                     "bsonType": "object",
-                    "required": [ "text" ],
+                    "required": [ "id_agent", "rol","text" ],
                     "properties": {
-                        "id_video_transcription": {"bsonType": "objectId"},
+                        "id_agent": {"bsonType": "objectId"},
+                        "rol": {"bsonType": "string"},
                         "text": {
                             "bsonType": "object",
                             "properties": {
@@ -32,7 +35,12 @@ inferences_schema = {
                         "metadata": {
                             "bsonType": "object",
                             "properties": {
-                                "tokens": {"bsonType": "int"},
+                                "role": {"bsonType": "string"},
+                                "model": {"bsonType": "string"},
+                                "finish_reason": {"bsonType": "string"},                                
+                                "total_tokens": {"bsonType": "int"},
+                                "completion_tokens": {"bsonType": "int"},
+                                "prompt_tokens": {"bsonType": "int"},
                                 "completion_time": {"bsonType": "date"}
                             }
                         }
