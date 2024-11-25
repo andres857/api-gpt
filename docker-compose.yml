@@ -16,6 +16,12 @@ services:
       - DB_DATABASE=${DB_DATABASE}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USERNAME_MONGO=${DB_USERNAME_MONGO}
+      - DB_PASSWORD_MONGO={DB_PASSWORD_MONGO} 
+      - DB_HOST_MONGO=${DB_HOST_MONGO} 
+      - DB_PORT_MONGO=${DB_PORT_MONGO} 
+      - DB_NAME_MONGO=${DB_NAME_MONGO} 
+      - AUTH_SOURCE_MONGO=${AUTH_SOURCE_MONGO} 
     command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
     logging:
       driver: "json-file"

@@ -8,16 +8,8 @@ from urllib.parse import quote_plus
 client: Optional[AsyncIOMotorClient] = None
 database = None
 
-# Configuración de la conexión
-DB_USERNAME = "desarrollo"
-DB_PASSWORD = "ppvBUKihdqYNWsA7R"
-DB_HOST = "mongodb"
-DB_PORT = "27017"
-DB_NAME = "inferences_private_zones"
-AUTH_SOURCE = "admin"
-
-DB_URI = f"mongodb://{quote_plus(DB_USERNAME)}:{quote_plus(DB_PASSWORD)}@{DB_HOST}:{DB_PORT}/{DB_NAME}?authSource={AUTH_SOURCE}"
-
+DB_URI = os.environ.get('DB_URI')
+DB_NAME_MONGO = os.environ.get('DB_NAME_MONGO')
 async def initialize_db():
     """Inicializa la conexión a MongoDB de forma asíncrona"""
     global client, database
@@ -30,7 +22,7 @@ async def initialize_db():
             socketTimeoutMS=5000,
             maxPoolSize=50
         )        
-        database = client[DB_NAME]
+        database = client[DB_NAME_MONGO]
         # Verificar la conexión y autenticación
         try:
             await client.admin.command('ping')
