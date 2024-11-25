@@ -7,7 +7,11 @@ from services.agent_service import get_agent_by_id
 from fastapi import HTTPException
 from pymongo.errors import DuplicateKeyError
 
-db = get_database()
+# db = get_database()
+
+async def get_video_trancriptions_collection():
+    db = await get_database()
+    return db.video_transcriptions
 
 # Se usa el agente transcriptor para mejorar el texto obtenido del video
 async def getInferenceIA( text:str ):
@@ -63,12 +67,13 @@ async def getTranscriptionVideoFromUrl(video_url: str, id_content:int):
             }
 
 async def create(video):
-    await db.video_transcriptions.create_index("id_mzg_content", unique=True)
+    video_transcriptions = await get_video_trancriptions_collection()
+    await video_transcriptions.create_index("id_mzg_content", unique=True)
     video_dict = video.dict(exclude={"id"}, by_alias=True)
     print(f"Service created Service: ${video_dict}")
     try:
-        result = await db.video_transcriptions.insert_one(video_dict)
-        created_video = await db.video_transcriptions.find_one({"_id": result.inserted_id})
+        result = await video_transcriptions.insert_one(video_dict)
+        created_video = await video_transcriptions.find_one({"_id": result.inserted_id})
 
         if created_video:
             created_video["_id"] = str(created_video["_id"])
@@ -83,14 +88,16 @@ async def create(video):
 
 async def list_videos_by_id_client(id):
     videos = []
-    cursor = db.video_transcriptions.find({"id_mzg_customer":id})
+    video_transcriptions = await get_video_trancriptions_collection()
+    cursor = video_transcriptions.find({"id_mzg_customer":id})
     async for video in cursor:
         video["_id"] = str(video["_id"])
         videos.append(video)
     return videos
 
 async def transcription_details(id):
-    result = await db.video_transcriptions.find_one({"_id": ObjectId(id)})
+    video_transcriptions = await get_video_trancriptions_collection()
+    result = await video_transcriptions.find_one({"_id": ObjectId(id)})
     if result:
         result["_id"] = str(result["_id"])
         return {
@@ -103,6 +110,7 @@ async def transcription_details(id):
         raise HTTPException(status_code=404, detail=" Video transcription Not Found")
 
 async def update_status_transcription_by_id_content(id, status):
+    video_transcriptions = await get_video_trancriptions_collection()
     print('SERVICE - ACTUALIZANDO EL ESTADO DE LA TAREA')
     filter = {"id_mzg_content": id}
     update = {
@@ -110,7 +118,7 @@ async def update_status_transcription_by_id_content(id, status):
             "transcription.task.state": status
         }
     }
-    result = await db.video_transcriptions.update_one(filter, update)
+    result = await video_transcriptions.update_one(filter, update)
     # Verificar si se actualizó algún documento
     if result.modified_count > 0:
         return {"message": f"Estado actualizado para id_mzg_content: {id}"}
@@ -118,6 +126,7 @@ async def update_status_transcription_by_id_content(id, status):
         return {"message": f"No se encontró documento para id_mzg_content: {id}"}
 
 async def update_transcription_by_id_content(id, status, statusMessage, inferencia=None, duration_video=None):
+    video_transcriptions = await get_video_trancriptions_collection()
     print(f"[ SERVICE UPDATE DOCUMENT 1 - {status}, {statusMessage}, {inferencia}, {duration_video}]")
     print(f"[ SERVICE UPDATE DOCUMENT 2 XXXXXX - {inferencia}]")
 
@@ -146,11 +155,11 @@ async def update_transcription_by_id_content(id, status, statusMessage, inferenc
         # update["$set"]["transcription.metadata.prompt_tokens"] = inferencia["prompt_tokens"]
 
     try:
-        result = await db.video_transcriptions.update_one(filter, update)
+        result = await video_transcriptions.update_one(filter, update)
 
         if result.modified_count > 0:
             # El documento fue actualizado exitosamente
-            updated_doc = await db.video_transcriptions.find_one(filter, projection={"_id": 1, "transcription.task": 1})
+            updated_doc = await video_transcriptions.find_one(filter, projection={"_id": 1, "transcription.task": 1})
             if updated_doc:
                 updated_doc["_id"] = str(updated_doc["_id"])
                 return updated_doc
@@ -167,6 +176,7 @@ async def update_transcription_by_id_content(id, status, statusMessage, inferenc
         raise HTTPException(status_code=502, detail=f"An error occurred: {str(e)}")
 
 async def get_total_documents_by_client(id_mzg_customer):
+    video_transcriptions = await get_video_trancriptions_collection()
     pipeline = [
         {
             "$match": {
@@ -179,7 +189,7 @@ async def get_total_documents_by_client(id_mzg_customer):
     ]
     
     try:
-        result = await db.video_transcriptions.aggregate(pipeline).to_list(length=None)
+        result = await video_transcriptions.aggregate(pipeline).to_list(length=None)
         
         if result:
             return {
@@ -202,6 +212,7 @@ async def get_total_documents_by_client(id_mzg_customer):
         }
     
 async def get_completed_tasks_count(id):
+    video_transcriptions = await get_video_trancriptions_collection()
     TASK_STATES = ["completed", "error", "pending", "in_progress"]
     pipeline = [
         {
@@ -218,7 +229,7 @@ async def get_completed_tasks_count(id):
         }
     ]
     try:
-        result = await db.video_transcriptions.aggregate(pipeline).to_list(length=None)
+        result = await video_transcriptions.aggregate(pipeline).to_list(length=None)
         total =  await get_total_documents_by_client(id)
         # Inicializamos todos los estados con 0
         counts = {state: 0 for state in TASK_STATES}

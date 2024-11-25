@@ -19,7 +19,8 @@ db_myzonego = get_db_connection_myzonego()
 
 @app.on_event("startup")
 async def startup_event():
-    initialize_db()
+    await initialize_db()
+    print('sss')
     await create_unique_index()
 
 app.include_router(agent.router)

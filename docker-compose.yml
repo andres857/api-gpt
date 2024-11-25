@@ -3,19 +3,65 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    restart: always
+    restart: unless-stopped
     volumes:
       - .:/app
-    ports:
-      - "1905:8000"
     environment:
       - OPEN_IA_KEY=${OPEN_IA_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - DB_URI=${DB_URI}
       - ENVIRONMENT=dev
-      - DB_HOST= ${DB_HOST}
-      - DB_PORT= ${DB_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
       - DB_DATABASE=${DB_DATABASE}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
     command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+    depends_on:
+      - mongodb
+    ports:
+      - "1905:8000"
+
+  mongodb:
+    image: mongodb/mongodb-community-server:6.0-ubi8
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DB_USERNAME_MONGO}
+      - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD_MONGO}
+    volumes:
+      - mongodb_data:/data/db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+    healthcheck:
+      test: mongosh --eval "db.adminCommand('ping')"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "27017:27017"
+
+  # mongoclient:
+  #   image: mongoclient/mongoclient:latest
+  #   hostname: mongoclient
+  #   depends_on:
+  #     - mongodb
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "5m"
+  #   ports:
+  #     - 3300:3000
+
+volumes:
+  mongodb_data:
+    name: mongodb_data
+
+networks:
+  ia-service:
+    external: true

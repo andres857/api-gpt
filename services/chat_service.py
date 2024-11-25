@@ -8,19 +8,21 @@ from whisper.utils import get_writer
 from ia.inference import inference_chat, inference_claude_chat
 from services.agent_service import get_agent_by_id
 from services.inferences_service import get_inference_chat_by_id_video_transcription
+from services.transcription_service import get_video_trancriptions_collection
 from fastapi import HTTPException
 from pymongo.errors import DuplicateKeyError
 from schemas.chat import ChatRequest
 import json
 
-db = get_database()
+# db = get_database()
 
 # Obtener las transcripciones guardadas del club
 # return un STRING con las transcriptions 
 async def get_transcriptions_by_id_club( id: int):
+    video_transcriptions = await get_video_trancriptions_collection
     separador = "\n\n===== SIGUIENTE TRANSCRIPCION DE VIDEO =====\n\n"
     videos_transcriptions = ""
-    cursor = db.video_transcriptions.find({"id_mzg_club":id})
+    cursor = video_transcriptions.find({"id_mzg_club":id})
     async for video_transcription in cursor:
         video_transcription["_id"] = str(video_transcription["_id"])
         if (video_transcription["transcription"]["text"] != None):
@@ -29,9 +31,10 @@ async def get_transcriptions_by_id_club( id: int):
     return videos_transcriptions
 
 async def get_resumen_transcription_IA_by_id_club( id: int):
+    video_transcriptions = await get_video_trancriptions_collection
     separador = "\n\n===== SIGUIENTE TRANSCRIPCION DE VIDEO =====\n\n"
     text_transcriptions = ""
-    cursor = db.video_transcriptions.find({"id_mzg_club":id})
+    cursor = video_transcriptions.find({"id_mzg_club":id})
     async for video_transcription in cursor:
         video_transcription["_id"] = str(video_transcription["_id"])
         if (video_transcription["transcription"]["text"] != None):

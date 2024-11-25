@@ -71,7 +71,7 @@ async def inferences_by_agent(id: str):
     inferences = await get_inferences_by_id_video_transcription(id)
     return inferences
 
-# Crear inferencias para un video_transcription 
+# Crear inferencias para un video
 @router.post("/videotranscription/{id}", responses={
     201: {"description": "Inference created successfully"},
     400: {"description": "Invalid request body"},

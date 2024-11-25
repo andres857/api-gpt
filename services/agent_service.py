@@ -3,16 +3,22 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
 from pymongo.errors import DuplicateKeyError
 from bson import ObjectId
-from db import get_database
+from typing import List
 
-db = get_database()
+from db import get_database
+from schemas.agent import Agent
+
+async def get_agents_collection():
+    db = await get_database()
+    return db.agentes
 
 async def create(agent):
+    agents = await get_agents_collection()
     agent_dict = agent.dict(exclude={"id"}, by_alias=True)
     print(f"Service AGENT Create: ${agent_dict}")
     try:
-        result = await db.agents.insert_one(agent_dict)
-        agent_created = await db.agents.find_one({"_id": result.inserted_id})
+        result = await agents.insert_one(agent_dict)
+        agent_created = await agents.find_one({"_id": result.inserted_id})
 
         if agent_created:
             agent_created["_id"] = str(agent_created["_id"])
@@ -25,18 +31,26 @@ async def create(agent):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating or retrieving agent: {str(e)}")
 
-async def get_all_agents():
-    agents = []
-    cursor = db.agentes.find()
-    async for agent in cursor:
-        agent["_id"] = str(agent["_id"])
-        agents.append(agent)
-    return agents
+async def get_all_agents() -> List[Agent]:
+    try:
+        agents = await get_agents_collection()
+        agents = []
+        
+        # Usar find con sort para obtener los agentes ordenados por fecha de creación
+        cursor = agents.find({}).sort("created_at", -1)
+        
+        async for agent_dict in cursor:
+            agents.append(Agent(**agent_dict))
+        print ('lo',agents)
+        return agents
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching agents: {str(e)}")
 
 async def get_agent_by_id(id):
+    agents = await get_agents_collection()
     object_id = ObjectId(id)
     try:
-        agent = await db.agentes.find_one({"_id": object_id})
+        agent = await agents.find_one({"_id": object_id})
         if agent:
             agent["_id"] = str(agent["_id"])
             return agent

@@ -11,11 +11,16 @@ from pydantic import BaseModel
 class InferenceResponse(BaseModel):
     inference: InferenceData
 
-db = get_database()
+# db = get_database()
+
+async def get_customers_collection():
+    db = await get_database()
+    return db.customers
 
 async def create_customer( customer: Customer):
+    customers = await get_customers_collection()
     # Crear un índice único en id_customer si aún no existe
-    await db.customers.create_index("id_customer", unique=True)
+    await customers.create_index("id_customer", unique=True)
     
     # Convertir el objeto Customer a un diccionario
     customer_dict = customer.model_dump(by_alias=True)
@@ -23,10 +28,10 @@ async def create_customer( customer: Customer):
     print(f"Service CUSTOMER Create: ${customer_dict}")
     try:
         # Insertar el cliente en la base de datos
-        result = await db.customers.insert_one(customer_dict)
+        result = await customers.insert_one(customer_dict)
         
         # Recuperar el cliente recién creado
-        customer_created = await db.customers.find_one({"_id": result.inserted_id})
+        customer_created = await customers.find_one({"_id": result.inserted_id})
         print("Service CREATED CUSTOMER", customer_created)
         
         if customer_created:
@@ -42,14 +47,16 @@ async def create_customer( customer: Customer):
 
 #retorna la informacion de un cliente
 async def get_client(id):
-    doc = await db.customers.find_one({"id_customer": int(id)})
+    customers = await get_customers_collection()
+    doc = await customers.find_one({"id_customer": int(id)})
     if doc:
         return Customer(**doc)
     raise HTTPException(status_code=404, detail="Customer not found")
 
 # retorna los tokens de files de un client, id_client
 async def get_tokens_files(id):
-    doc = await db.customers.find_one({"id_customer": int(id)})
+    customers = await get_customers_collection()
+    doc = await customers.find_one({"id_customer": int(id)})
     if doc:
         client = Customer(**doc)
         return InferenceResponse(inference=client.inference)
@@ -57,7 +64,8 @@ async def get_tokens_files(id):
 
 # retorna los tokens de chat de un client, id_client
 async def get_tokens_chat(id):
-    doc = await db.customers.find_one({"id_customer": int(id)})
+    customers = await get_customers_collection()
+    doc = await customers.find_one({"id_customer": int(id)})
     if doc:
         client = Customer(**doc)
         print(client)
@@ -66,6 +74,7 @@ async def get_tokens_chat(id):
 
 async def update_customer_chat(id_customer: int, update_data: InferenceData):
     # Preparar la operación de actualización
+    customers = await get_customers_collection()
     update_operation = {
         "$inc": {
             "inference_chat.tokens.prompt_tokens": update_data.inference_chat.tokens.prompt_tokens,
@@ -81,7 +90,7 @@ async def update_customer_chat(id_customer: int, update_data: InferenceData):
     }
 
     # Actualizar el documento en la base de datos
-    result = await db.customers.update_one(
+    result = await customers.update_one(
         {"id_customer": id_customer},
         update_operation
     )
@@ -90,7 +99,7 @@ async def update_customer_chat(id_customer: int, update_data: InferenceData):
         raise HTTPException(status_code=404, detail="Customer not found")
 
     # Recuperar el cliente actualizado
-    updated_customer = await db.customers.find_one({"id_customer": id_customer})
+    updated_customer = await customers.find_one({"id_customer": id_customer})
     
     if updated_customer:
         # Convertir ObjectId a str para las transcripciones antes de la validación
@@ -101,6 +110,7 @@ async def update_customer_chat(id_customer: int, update_data: InferenceData):
         raise HTTPException(status_code=404, detail="Error retrieving updated customer")
 
 async def update_customer_files( id_customer: int, update_data: InferenceData):
+    customers = await get_customers_collection()
     # Convertir los datos de actualización a un diccionario
     update_operation = {
         "$inc": {
@@ -117,7 +127,7 @@ async def update_customer_files( id_customer: int, update_data: InferenceData):
     }
 
     # Actualizar el documento en la base de datos
-    result = await db.customers.update_one(
+    result = await customers.update_one(
         {"id_customer": id_customer},
         update_operation
     )
@@ -126,7 +136,7 @@ async def update_customer_files( id_customer: int, update_data: InferenceData):
         raise HTTPException(status_code=404, detail="Customer not found")
 
     # Recuperar el cliente actualizado
-    updated_customer = await db.customers.find_one({"id_customer": id_customer})
+    updated_customer = await customers.find_one({"id_customer": id_customer})
     
     if updated_customer:
         # Convertir ObjectId a str para las transcripciones antes de la validación
