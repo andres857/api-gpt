@@ -5,9 +5,6 @@ import os
 from typing import Optional
 from urllib.parse import quote_plus
 
-# client = AsyncIOMotorClient(os.environ.get('DB_URI'))
-# database = client.get_database("test_database")
-
 client: Optional[AsyncIOMotorClient] = None
 database = None
 
@@ -18,20 +15,6 @@ DB_HOST = "mongodb"
 DB_PORT = "27017"
 DB_NAME = "inferences_private_zones"
 AUTH_SOURCE = "admin"
-
-def initialize_db1():
-    global client, database
-    try:
-        client = AsyncIOMotorClient(os.environ.get('DB_URI'), serverSelectionTimeoutMS=5000)
-        # database = client.get_database("test_database")
-        database = client.get_database("inferences_private_zones")
-
-        # Verifica la conexión
-        client.server_info()
-        print("[MONGO - DB] Success Connection")
-        print (client)
-    except ServerSelectionTimeoutError:
-        print("[MONGO - DB] No se pudo conectar a MongoDB. Verifica la URI de conexión y la red.")
 
 DB_URI = f"mongodb://{quote_plus(DB_USERNAME)}:{quote_plus(DB_PASSWORD)}@{DB_HOST}:{DB_PORT}/{DB_NAME}?authSource={AUTH_SOURCE}"
 
@@ -46,10 +29,8 @@ async def initialize_db():
             connectTimeoutMS=5000,
             socketTimeoutMS=5000,
             maxPoolSize=50
-        )
-        
+        )        
         database = client[DB_NAME]
-
         # Verificar la conexión y autenticación
         try:
             await client.admin.command('ping')
@@ -91,6 +72,6 @@ async def create_unique_index():
     await db.video_transcriptions.create_index("id_mzg_content", unique=True)
 
 def get_db_connection_myzonego():
-    database_url = f'mysql+mysqlconnector://{os.environ.get("DB_USERNAME")}:{os.environ.get("DB_PASSWORD")}@{"201.244.192.92"}:{3307}/{os.environ.get("DB_DATABASE")}'
+    database_url = f'mysql+mysqlconnector://{os.environ.get("DB_USERNAME")}:{os.environ.get("DB_PASSWORD")}@{"192.168.0.102"}:{3307}/{os.environ.get("DB_DATABASE")}'
     engine = create_engine(database_url)    
     return engine

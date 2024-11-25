@@ -7,8 +7,6 @@ from services.agent_service import get_agent_by_id
 from fastapi import HTTPException
 from pymongo.errors import DuplicateKeyError
 
-# db = get_database()
-
 async def get_video_trancriptions_collection():
     db = await get_database()
     return db.video_transcriptions

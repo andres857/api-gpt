@@ -10,7 +10,7 @@ from schemas.agent import Agent
 
 async def get_agents_collection():
     db = await get_database()
-    return db.agentes
+    return db.agents
 
 async def create(agent):
     agents = await get_agents_collection()
@@ -31,20 +31,18 @@ async def create(agent):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating or retrieving agent: {str(e)}")
 
-async def get_all_agents() -> List[Agent]:
+async def get_all_agents():
+    agents = await get_agents_collection()
     try:
-        agents = await get_agents_collection()
-        agents = []
-        
-        # Usar find con sort para obtener los agentes ordenados por fecha de creación
-        cursor = agents.find({}).sort("created_at", -1)
-        
-        async for agent_dict in cursor:
-            agents.append(Agent(**agent_dict))
-        print ('lo',agents)
-        return agents
+        agents_list = []
+        agents_cursor = agents.find()
+        async for agent in agents_cursor:
+            agent["_id"] = str(agent["_id"])
+            agents_list.append(agent)
+        return agents_list
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching agents: {str(e)}")
+        print(e)
+        raise HTTPException(status_code=502, detail=f"Error fetching agents: {str(e)}")
 
 async def get_agent_by_id(id):
     agents = await get_agents_collection()

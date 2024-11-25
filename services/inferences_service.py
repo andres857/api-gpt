@@ -52,14 +52,15 @@ async def update_transcriptions_with_inference(db: AsyncIOMotorDatabase):
     print("Proceso completado")
 
 async def create(inference):
-    inferences = await get_video_trancriptions_collection()
-    await inferences.create_index("id_video_transcription", unique=True)
+    print(f"Service INFERENCE Create", inference)
+    inferences_collection = await get_inferences_collection()
+    await inferences_collection.create_index("id_video_transcription", unique=True)
     inference_dict = inference.dict(by_alias=True)
 
     print(f"Service INFERENCE Create: ${inference_dict}")
     try:
-        result = await inferences.insert_one(inference_dict)
-        inferences_created = await inferences.find_one({"_id": result.inserted_id})
+        result = await inferences_collection.insert_one(inference_dict)
+        inferences_created = await inferences_collection.find_one({"_id": result.inserted_id})
         print("service CREATED INFERENCES",inferences_created)
         if inferences_created:
             return Inferences.model_validate(inferences_created)
@@ -73,15 +74,17 @@ async def create(inference):
     
 # Crea las inferencias iniciales para un video_transcription
 async def create_inferences_for_videotranscription(id_video_transcription: str):
+    inferences_list = []
+
     transcription = await transcription_details(id_video_transcription)
     content_transcription = transcription["data"]["content"]["transcription"]["text"]
     
     agents = await get_all_agents()
     agent_translate_to_en = await get_agent_by_id('66b03a0304d4364a6e55d37a')
+    
     print('here agent', agent_translate_to_en)
     agents = [agent for agent in agents if agent['rol'] != 'Chat' and agent['rol'] and agent['rol'] != 'Traductor EN'] # Delete agents que no son necesarios
 
-    inferences_list = []
     for agent in agents:
         inferencia = await inference(agent['prompt'], content_transcription)
         inferencia_en = await inference(agent_translate_to_en['prompt'], inferencia["inference_text"])
@@ -130,7 +133,7 @@ async def create_inferences_for_videotranscription(id_video_transcription: str):
 
 # retorna todas la inferencias de un video_transcription
 async def get_inferences_by_id_video_transcription(id):
-    inferences = await get_video_trancriptions_collection()
+    inferences = await get_inferences_collection()
     doc = await inferences.find_one({"id_video_transcription": ObjectId(id)})
     print("list FUNCTION", doc)
     if doc:
@@ -139,7 +142,7 @@ async def get_inferences_by_id_video_transcription(id):
 
 # retorna la inferencia Acortada para el chat
 async def get_inference_chat_by_id_video_transcription(id):
-    inferences = await get_video_trancriptions_collection()
+    inferences = await get_inferences_collection()
     doc = await inferences.find_one({"id_video_transcription": ObjectId(id)})
     if doc:
         chat_inference = next((inference for inference in doc.get('inferences', []) if inference.get('rol') == 'Resumen video IA'), None)
@@ -152,7 +155,7 @@ async def add_inference(id_video_transcription, id_inference):
 
 # retorna los tokens usados para una transcripcion de video 
 async def used_tokens(id_video_transcription):
-    inferences = await get_video_trancriptions_collection()
+    inferences = await get_inferences_collection()
     doc = await inferences.find_one({"id_video_transcription": ObjectId(id_video_transcription)})
     if doc:
         total_tokens = 0
@@ -165,7 +168,7 @@ async def used_tokens(id_video_transcription):
 
 # retorna los tokens usados para una transcripcion de video 
 async def used_tokens_by_client(id_client):
-    inferences = await get_video_trancriptions_collection()
+    inferences = await get_inferences_collection()
     video_transcriptions = await get_video_trancriptions_collection()
 
     video_transcriptions_cursor = video_transcriptions.find({"id_mzg_customer": int(id_client)})
