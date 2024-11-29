@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError, BaseModel, HttpUrl
 from typing import Optional
 from utils import save_video, save_video_from_url, delete_video
-from services.transcription_service import  create, getTranscriptionVideoFromUrl, list_videos_by_id_client, update_status_transcription_by_id_content,get_completed_tasks_count, transcription_details, getTranscriptionVideoFromVideoFile
+from services.transcription_service import  create, getTranscriptionVideoFromUrl, list_videos_by_id_client, update_status_transcription_by_id_content,get_completed_tasks_count, transcription_details, getTranscriptionVideoFromVideoFile, transcription_details_privates_zones
 from schemas.video_transcription import VideoTranscription
 
 router = APIRouter(
@@ -20,6 +20,16 @@ router = APIRouter(
 })
 async def get_transcription_info(id:str):
     transcription = await transcription_details(id)
+    return transcription
+
+# Obtener la transcripcion con el id del contenido de una zona privada
+@router.get("/private-zones/content/{id}", responses={
+    200: {"description": "Video uploaded successfully"},
+    400: {"description": "Invalid request body"},
+    500: {"description": "Internal server error"}
+})
+async def get_transcription_info(id:str):
+    transcription = await transcription_details_privates_zones(id)
     return transcription
 
 # crea el document en la collection para el video

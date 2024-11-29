@@ -107,6 +107,22 @@ async def transcription_details(id):
     else:
         raise HTTPException(status_code=404, detail=" Video transcription Not Found")
 
+
+async def transcription_details_privates_zones(id):
+    video_transcriptions = await get_video_trancriptions_collection()
+    print(id, 'zones')
+    result = await video_transcriptions.find_one({'id_mzg_content': int(id)})
+    if result:
+        result["_id"] = str(result["_id"])
+        return {
+            "status": "success",
+            "data": {
+                "content": result
+            }
+        }
+    else:
+        raise HTTPException(status_code=404, detail=" Video transcription Not Found")
+
 async def update_status_transcription_by_id_content(id, status):
     video_transcriptions = await get_video_trancriptions_collection()
     print('SERVICE - ACTUALIZANDO EL ESTADO DE LA TAREA')
