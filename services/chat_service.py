@@ -31,7 +31,7 @@ async def get_transcriptions_by_id_club( id: int):
     return videos_transcriptions
 
 async def get_resumen_transcription_IA_by_id_club( id: int):
-    video_transcriptions = await get_video_trancriptions_collection
+    video_transcriptions = await get_video_trancriptions_collection()
     separador = "\n\n===== SIGUIENTE TRANSCRIPCION DE VIDEO =====\n\n"
     text_transcriptions = ""
     cursor = video_transcriptions.find({"id_mzg_club":id})

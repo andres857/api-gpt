@@ -54,8 +54,11 @@ async def get_urls_video_by_customer_service(
     customer_id: str, 
     count_only: bool = Query(False, description="If true, returns only the count of videos")
  ):
-    url_content = get_urls_video_by_customer( customer_id )
-    if count_only:
-        return { "count": len(url_content)}
+    if customer_id == '72':
+        url_content = get_urls_video_by_customer( customer_id )
+        if count_only:
+            return { "count": len(url_content)}
+        else:
+            return url_content
     else:
-        return url_content
+        return { "count": 0 }

@@ -17,7 +17,7 @@ router = APIRouter(
     500: {"description": "Internal server error"}
 })
 async def chat_responses(body: ChatRequest = Body(...)):
-    print(body.id_club)
+    print("saaaaaaa",body.id_club)
     # video_t = await get_transcriptions_by_id_club(body.id_club)
     tx = await chat_agent_gpt(body.id_club, body)
     return {"message": tx}

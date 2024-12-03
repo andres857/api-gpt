@@ -52,18 +52,6 @@ services:
     ports:
       - "27017:27017"
 
-  # mongoclient:
-  #   image: mongoclient/mongoclient:latest
-  #   hostname: mongoclient
-  #   depends_on:
-  #     - mongodb
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "5m"
-  #   ports:
-  #     - 3300:3000
-
 volumes:
   mongodb_data:
     name: mongodb_data

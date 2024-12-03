@@ -64,6 +64,6 @@ async def create_unique_index():
     await db.video_transcriptions.create_index("id_mzg_content", unique=True)
 
 def get_db_connection_myzonego():
-    database_url = f'mysql+mysqlconnector://{os.environ.get("DB_USERNAME")}:{os.environ.get("DB_PASSWORD")}@{"192.168.0.102"}:{3307}/{os.environ.get("DB_DATABASE")}'
+    database_url = f'mysql+mysqlconnector://{os.environ.get("DB_USERNAME")}:{os.environ.get("DB_PASSWORD")}@{"165.227.251.159"}:{3306}/{os.environ.get("DB_DATABASE")}'
     engine = create_engine(database_url)    
     return engine
