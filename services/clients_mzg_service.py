@@ -1,25 +1,33 @@
+import json
 from sqlalchemy import text
 from db import get_db_connection_myzonego
 from utils import JSONEncoder
-import json
 
-def get_all_customers():
-    engine = get_db_connection_myzonego()
+async def get_all_customers():
+    # Obtenemos la conexión a la base de datos
+    engine = await get_db_connection_myzonego()
     
-    with engine.connect() as connection:
-        # Utilizar la conexión para realizar consultas y operaciones en la base de datos
-        result = connection.execute(text("SELECT id, name, url_portal FROM customers"))
-        customers_list = []
-        for row in result:
-            item = {
-                "id": row[0],
-                "name": row[1],
-                "url_portal": row[2]
-            }
-            customers_list.append(item)
+    async with engine.connect() as connection:
+        try:
+            # La ejecución de consultas es una operación asíncrona, necesitamos await
+            result = await connection.execute(text("SELECT id, name, url_portal FROM customers"))
+            # No necesitamos await result.fetchall() porque result ya es iterable
+            customers_list = []
+            for row in result:
+                item = {
+                    "id": row[0],
+                    "name": row[1],
+                    "url_portal": row[2]
+                }
+                customers_list.append(item)
 
-        customers = json.loads(JSONEncoder().encode(customers_list))
-        return customers
+            # Devolvemos directamente la lista de clientes
+            return customers_list
+
+        except Exception as e:
+            # Es buena práctica incluir más información en el log del error
+            print(f"Error al obtener clientes: {str(e)}")
+            raise
 
 def get_client_by_id(id):
     engine = get_db_connection_myzonego()

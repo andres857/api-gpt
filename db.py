@@ -1,6 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from sqlalchemy import create_engine
 from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
+from sqlalchemy import create_engine, text
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 import os
 from typing import Optional
 from urllib.parse import quote_plus
@@ -63,7 +64,30 @@ async def create_unique_index():
     db = await get_database()
     await db.video_transcriptions.create_index("id_mzg_content", unique=True)
 
-def get_db_connection_myzonego():
-    database_url = f'mysql+mysqlconnector://{os.environ.get("DB_USERNAME")}:{os.environ.get("DB_PASSWORD")}@{"165.227.251.159"}:{3306}/{os.environ.get("DB_DATABASE")}'
-    engine = create_engine(database_url)    
-    return engine
+# def get_db_connection_myzonego():
+#     database_url = f'mysql+mysqlconnector://{os.environ.get("DB_USERNAME")}:{os.environ.get("DB_PASSWORD")}@{"165.227.251.159"}:{3306}/{os.environ.get("DB_DATABASE")}'
+#     engine = create_engine(database_url)    
+#     return engine
+
+# async def get_db_connection_myzonego():
+#     return create_async_engine(
+#         f'mysql+aiomysql://{os.environ.get("DB_USERNAME")}:{os.environ.get("DB_PASSWORD")}@201.244.192.92:3306/{os.environ.get("DB_DATABASE")}',
+#         echo=True
+#     )
+
+async def get_db_connection_myzonego():
+    # Obtenemos las credenciales de las variables de entorno
+    username = os.environ.get("DB_USERNAME")
+    password = os.environ.get("DB_PASSWORD")
+    database = os.environ.get("DB_DATABASE")
+    host = "165.227.251.159"
+    port = 3306
+
+    # Construimos la URL de conexión
+    database_url = f'mysql+aiomysql://{username}:{password}@{host}:{port}/{database}'
+
+    # Creamos y retornamos el engine
+    return create_async_engine(
+        database_url,
+        echo=True  # Considera cambiar a False en producción
+    )
